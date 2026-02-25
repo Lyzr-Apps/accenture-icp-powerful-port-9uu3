@@ -1,0 +1,38 @@
+{
+  "agent_name": "Contributor Extraction Agent",
+  "agent_id": "699ee6042a8693f427efc305",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "ContributorExtractionResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "contributors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "full_name": {"type": "string"},
+                "report_role": {"type": "string"},
+                "org_unit": {"type": "string"},
+                "evidence_chunks": {"type": "array", "items": {"type": "string"}},
+                "source_reports": {"type": "array", "items": {"type": "string"}}
+              },
+              "required": ["full_name", "report_role", "org_unit", "evidence_chunks", "source_reports"],
+              "additionalProperties": false
+            }
+          },
+          "total_extracted": {"type": "number"},
+          "sections_searched": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["contributors", "total_extracted", "sections_searched"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "agent_name": "Contact Enrichment Agent",
+  "agent_id": "699ee622ff3015f83d7a8118",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "ContactEnrichmentResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "enriched_contacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "full_name": {"type": "string"},
+                "job_title": {"type": "string"},
+                "company": {"type": "string"},
+                "org_unit": {"type": "string"},
+                "location": {"type": "string"},
+                "linkedin_url": {"type": "string"},
+                "email": {"type": "string"},
+                "confidence": {"type": "string"},
+                "needs_review": {"type": "boolean"},
+                "source_reports": {"type": "array", "items": {"type": "string"}},
+                "persona_tags": {"type": "array", "items": {"type": "string"}}
+              },
+              "required": ["full_name", "job_title", "company", "org_unit", "location", "linkedin_url", "email", "confidence", "needs_review", "source_reports", "persona_tags"],
+              "additionalProperties": false
+            }
+          },
+          "total_enriched": {"type": "number"},
+          "total_needs_review": {"type": "number"},
+          "enrichment_summary": {"type": "string"}
+        },
+        "required": ["enriched_contacts", "total_enriched", "total_needs_review", "enrichment_summary"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

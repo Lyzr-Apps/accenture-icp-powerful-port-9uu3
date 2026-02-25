@@ -1,0 +1,41 @@
+{
+  "agent_name": "Source Discovery Agent",
+  "agent_id": "699ee5a328faeef293503944",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "SourceDiscoveryResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "discovered_sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {"type": "string"},
+                "url": {"type": "string"},
+                "pdf_url": {"type": "string"},
+                "publication_date": {"type": "string"},
+                "series": {"type": "string"},
+                "industry_tags": {"type": "array", "items": {"type": "string"}},
+                "relevance_score": {"type": "number"}
+              },
+              "required": ["title", "url", "pdf_url", "publication_date", "series", "industry_tags", "relevance_score"],
+              "additionalProperties": false
+            }
+          },
+          "total_found": {"type": "number"},
+          "dedup_removed": {"type": "number"},
+          "search_summary": {"type": "string"}
+        },
+        "required": ["discovered_sources", "total_found", "dedup_removed", "search_summary"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

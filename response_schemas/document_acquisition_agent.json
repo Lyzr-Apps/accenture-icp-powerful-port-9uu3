@@ -1,0 +1,41 @@
+{
+  "agent_name": "Document Acquisition Agent",
+  "agent_id": "699ee5b18c35cfd5b5590bd2",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "DocumentAcquisitionResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "acquired_documents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_url": {"type": "string"},
+                "content_type": {"type": "string"},
+                "fetch_date": {"type": "string"},
+                "content_hash": {"type": "string"},
+                "file_size_kb": {"type": "number"},
+                "status": {"type": "string"},
+                "error_detail": {"type": "string"}
+              },
+              "required": ["source_url", "content_type", "fetch_date", "content_hash", "file_size_kb", "status", "error_detail"],
+              "additionalProperties": false
+            }
+          },
+          "total_attempted": {"type": "number"},
+          "total_successful": {"type": "number"},
+          "total_failed": {"type": "number"}
+        },
+        "required": ["acquired_documents", "total_attempted", "total_successful", "total_failed"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

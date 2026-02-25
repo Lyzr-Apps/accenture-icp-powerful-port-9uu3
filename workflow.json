@@ -1,0 +1,99 @@
+{
+  "agents": [
+    {
+      "name": "Source Discovery Agent",
+      "agent_id": "699ee5a328faeef293503944",
+      "type": "sub-agent",
+      "provider": "perplexity",
+      "model": "sonar-pro",
+      "has_kb": false,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Document Acquisition Agent",
+      "agent_id": "699ee5b18c35cfd5b5590bd2",
+      "type": "sub-agent",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_kb": false,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Document Parsing Agent",
+      "agent_id": "699ee5beff3015f83d7a80f3",
+      "type": "sub-agent",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_kb": false,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Report Summarizer Agent",
+      "agent_id": "699ee5e42a8693f427efc2e7",
+      "type": "sub-agent",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5",
+      "has_kb": true,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Persona Extraction Agent",
+      "agent_id": "699ee5f52a8693f427efc2f7",
+      "type": "sub-agent",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5",
+      "has_kb": true,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Contributor Extraction Agent",
+      "agent_id": "699ee6042a8693f427efc305",
+      "type": "sub-agent",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_kb": true,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Contact Enrichment Agent",
+      "agent_id": "699ee622ff3015f83d7a8118",
+      "type": "sub-agent",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_kb": false,
+      "has_tools": true,
+      "file_output": false
+    },
+    {
+      "name": "ABM Email Generator Agent",
+      "agent_id": "699ee5d18c35cfd5b5590bf0",
+      "type": "sub-agent",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_kb": false,
+      "has_tools": false,
+      "file_output": false
+    },
+    {
+      "name": "Playbook Orchestrator",
+      "agent_id": "699ee645c0628a36907949b8",
+      "type": "manager",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "has_kb": false,
+      "has_tools": false,
+      "file_output": true
+    }
+  ],
+  "knowledge_base": {
+    "rag_id": "699ee578c9ac7bb71c08b9cc",
+    "name": "Accenture AI Reports KB"
+  },
+  "workflow_created": true
+}

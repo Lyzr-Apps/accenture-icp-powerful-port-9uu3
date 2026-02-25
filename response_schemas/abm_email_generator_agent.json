@@ -1,0 +1,51 @@
+{
+  "agent_name": "ABM Email Generator Agent",
+  "agent_id": "699ee5d18c35cfd5b5590bf0",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "ABMEmailGeneratorResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "email_sequences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contact_name": {"type": "string"},
+                "persona_tag": {"type": "string"},
+                "emails": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "variant_type": {"type": "string"},
+                      "subject_line": {"type": "string"},
+                      "body": {"type": "string"},
+                      "cta": {"type": "string"},
+                      "cited_claims": {"type": "array", "items": {"type": "string"}},
+                      "compliance_footer": {"type": "string"}
+                    },
+                    "required": ["variant_type", "subject_line", "body", "cta", "cited_claims", "compliance_footer"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": ["contact_name", "persona_tag", "emails"],
+              "additionalProperties": false
+            }
+          },
+          "total_emails_generated": {"type": "number"},
+          "personas_covered": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["email_sequences", "total_emails_generated", "personas_covered"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

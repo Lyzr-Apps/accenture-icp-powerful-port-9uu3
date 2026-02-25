@@ -1,0 +1,161 @@
+{
+  "project": "Accenture ABM Intelligence Platform",
+  "architecture": "manager-subagent",
+  "created_at": "2026-02-25",
+  "knowledge_base": {
+    "rag_id": "699ee578c9ac7bb71c08b9cc",
+    "rag_name": "accentureaireportskbciba",
+    "display_name": "Accenture AI Reports KB",
+    "description": "Knowledge base containing parsed Accenture AI transformation reports for RAG-grounded summarization, persona extraction, and contributor identification",
+    "ingested_files": [
+      "Accenture-Tech-Vision-2025.pdf",
+      "Accenture-Art-of-AI-Maturity-Report.pdf",
+      "Making-Reinvention-Real-With-GenAI-TL.pdf",
+      "Accenture-Reinvention-in-the-age-of-generative-AI-Report.pdf"
+    ]
+  },
+  "agents": {
+    "manager": {
+      "name": "Playbook Orchestrator",
+      "agent_id": "699ee645c0628a36907949b8",
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "temperature": 0.2,
+      "top_p": 1,
+      "file_output": true,
+      "has_kb": false,
+      "has_tools": false,
+      "managed_agents": [
+        "699ee5a328faeef293503944",
+        "699ee5b18c35cfd5b5590bd2",
+        "699ee5beff3015f83d7a80f3",
+        "699ee5e42a8693f427efc2e7",
+        "699ee5f52a8693f427efc2f7",
+        "699ee6042a8693f427efc305",
+        "699ee622ff3015f83d7a8118",
+        "699ee5d18c35cfd5b5590bf0"
+      ]
+    },
+    "sub_agents": [
+      {
+        "name": "Source Discovery Agent",
+        "agent_id": "699ee5a328faeef293503944",
+        "provider": "perplexity",
+        "model": "sonar-pro",
+        "temperature": 0.2,
+        "top_p": 1,
+        "has_kb": false,
+        "has_tools": false,
+        "file_output": false
+      },
+      {
+        "name": "Document Acquisition Agent",
+        "agent_id": "699ee5b18c35cfd5b5590bd2",
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "temperature": 0.1,
+        "top_p": 1,
+        "has_kb": false,
+        "has_tools": false,
+        "file_output": false
+      },
+      {
+        "name": "Document Parsing Agent",
+        "agent_id": "699ee5beff3015f83d7a80f3",
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "temperature": 0.2,
+        "top_p": 1,
+        "has_kb": false,
+        "has_tools": false,
+        "file_output": false
+      },
+      {
+        "name": "Report Summarizer Agent",
+        "agent_id": "699ee5e42a8693f427efc2e7",
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-5",
+        "temperature": 0.3,
+        "top_p": 1,
+        "has_kb": true,
+        "rag_id": "699ee578c9ac7bb71c08b9cc",
+        "has_tools": false,
+        "file_output": false
+      },
+      {
+        "name": "Persona Extraction Agent",
+        "agent_id": "699ee5f52a8693f427efc2f7",
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-5",
+        "temperature": 0.3,
+        "top_p": 1,
+        "has_kb": true,
+        "rag_id": "699ee578c9ac7bb71c08b9cc",
+        "has_tools": false,
+        "file_output": false
+      },
+      {
+        "name": "Contributor Extraction Agent",
+        "agent_id": "699ee6042a8693f427efc305",
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "temperature": 0.1,
+        "top_p": 1,
+        "has_kb": true,
+        "rag_id": "699ee578c9ac7bb71c08b9cc",
+        "has_tools": false,
+        "file_output": false
+      },
+      {
+        "name": "Contact Enrichment Agent",
+        "agent_id": "699ee622ff3015f83d7a8118",
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "temperature": 0.2,
+        "top_p": 1,
+        "has_kb": false,
+        "has_tools": true,
+        "tools": ["APOLLO_PEOPLE_SEARCH", "APOLLO_PEOPLE_ENRICHMENT", "APOLLO_BULK_PEOPLE_ENRICHMENT"],
+        "file_output": false
+      },
+      {
+        "name": "ABM Email Generator Agent",
+        "agent_id": "699ee5d18c35cfd5b5590bf0",
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "has_kb": false,
+        "has_tools": false,
+        "file_output": false
+      }
+    ]
+  },
+  "workflow": {
+    "nodes": [
+      {"id": "input_node", "type": "Input", "label": "Seed URLs & Filters", "nodeCategory": "input"},
+      {"id": "manager_agent", "type": "Agent", "label": "Playbook Orchestrator", "nodeCategory": "agent"},
+      {"id": "source_discovery", "type": "Agent", "label": "Source Discovery Agent", "nodeCategory": "agent"},
+      {"id": "doc_acquisition", "type": "Agent", "label": "Document Acquisition Agent", "nodeCategory": "agent"},
+      {"id": "doc_parsing", "type": "Agent", "label": "Document Parsing Agent", "nodeCategory": "agent"},
+      {"id": "report_summarizer", "type": "Agent", "label": "Report Summarizer Agent", "nodeCategory": "agent"},
+      {"id": "persona_extraction", "type": "Agent", "label": "Persona Extraction Agent", "nodeCategory": "agent"},
+      {"id": "contributor_extraction", "type": "Agent", "label": "Contributor Extraction Agent", "nodeCategory": "agent"},
+      {"id": "contact_enrichment", "type": "Agent", "label": "Contact Enrichment Agent", "nodeCategory": "agent"},
+      {"id": "abm_email_gen", "type": "Agent", "label": "ABM Email Generator Agent", "nodeCategory": "agent"},
+      {"id": "output_node", "type": "Output", "label": "Playbook Output", "nodeCategory": "end"}
+    ],
+    "edges": [
+      {"source": "input_node", "target": "manager_agent"},
+      {"source": "manager_agent", "target": "source_discovery"},
+      {"source": "manager_agent", "target": "doc_acquisition"},
+      {"source": "manager_agent", "target": "doc_parsing"},
+      {"source": "manager_agent", "target": "report_summarizer"},
+      {"source": "manager_agent", "target": "persona_extraction"},
+      {"source": "manager_agent", "target": "contributor_extraction"},
+      {"source": "manager_agent", "target": "contact_enrichment"},
+      {"source": "manager_agent", "target": "abm_email_gen"},
+      {"source": "manager_agent", "target": "output_node"}
+    ]
+  }
+}

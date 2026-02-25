@@ -1,0 +1,250 @@
+{
+  "agent_name": "Playbook Orchestrator",
+  "agent_id": "699ee645c0628a36907949b8",
+  "description": "Coordinates all sub-agents end-to-end: plans pipeline from seed URLs, routes to specialists, enforces quality gates, and assembles final playbook package",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "playbook_id": "string",
+    "report_title": "string",
+    "generation_date": "string",
+    "pipeline_status": "string",
+    "executive_summary": "string",
+    "key_claims": [
+      {
+        "claim": "string",
+        "citation_ref": "string",
+        "page_section": "string",
+        "confidence_score": "number",
+        "industry_relevance": [
+          "string"
+        ]
+      }
+    ],
+    "industry_relevance_map": [
+      {
+        "industry": "string",
+        "relevance_score": "number",
+        "key_themes": [
+          "string"
+        ]
+      }
+    ],
+    "signals": [
+      {
+        "signal_type": "string",
+        "description": "string",
+        "source_ref": "string"
+      }
+    ],
+    "personas": [
+      {
+        "role_title": "string",
+        "seniority_level": "string",
+        "kpis": [
+          "string"
+        ],
+        "pain_points": [
+          "string"
+        ],
+        "buying_triggers": [
+          "string"
+        ],
+        "objections": [
+          "string"
+        ],
+        "committee_neighbors": [
+          "string"
+        ],
+        "report_fit_score": "number"
+      }
+    ],
+    "icp_summary": {
+      "industry_segments": [
+        "string"
+      ],
+      "company_size_bands": [
+        "string"
+      ],
+      "tech_stack_hints": [
+        "string"
+      ],
+      "geographic_focus": [
+        "string"
+      ]
+    },
+    "enriched_contacts": [
+      {
+        "full_name": "string",
+        "job_title": "string",
+        "company": "string",
+        "org_unit": "string",
+        "location": "string",
+        "linkedin_url": "string",
+        "email": "string",
+        "confidence": "string",
+        "needs_review": "boolean",
+        "source_reports": [
+          "string"
+        ],
+        "persona_tags": [
+          "string"
+        ]
+      }
+    ],
+    "email_sequences": [
+      {
+        "contact_name": "string",
+        "persona_tag": "string",
+        "emails": [
+          {
+            "variant_type": "string",
+            "subject_line": "string",
+            "body": "string",
+            "cta": "string",
+            "cited_claims": [
+              "string"
+            ],
+            "compliance_footer": "string"
+          }
+        ]
+      }
+    ],
+    "quality_gates": {
+      "groundedness_pass": "boolean",
+      "dedup_pass": "boolean",
+      "confidence_threshold_met": "boolean",
+      "issues_flagged": [
+        "string"
+      ]
+    },
+    "total_contacts": "number",
+    "total_emails": "number"
+  },
+  "example_response": {
+    "playbook_id": "sample string",
+    "report_title": "sample string",
+    "generation_date": "sample string",
+    "pipeline_status": "sample string",
+    "executive_summary": "sample string",
+    "key_claims": [
+      {
+        "claim": "sample string",
+        "citation_ref": "sample string",
+        "page_section": "sample string",
+        "confidence_score": 0,
+        "industry_relevance": [
+          "sample string"
+        ]
+      }
+    ],
+    "industry_relevance_map": [
+      {
+        "industry": "sample string",
+        "relevance_score": 0,
+        "key_themes": [
+          "sample string"
+        ]
+      }
+    ],
+    "signals": [
+      {
+        "signal_type": "sample string",
+        "description": "sample string",
+        "source_ref": "sample string"
+      }
+    ],
+    "personas": [
+      {
+        "role_title": "sample string",
+        "seniority_level": "sample string",
+        "kpis": [
+          "sample string"
+        ],
+        "pain_points": [
+          "sample string"
+        ],
+        "buying_triggers": [
+          "sample string"
+        ],
+        "objections": [
+          "sample string"
+        ],
+        "committee_neighbors": [
+          "sample string"
+        ],
+        "report_fit_score": 0
+      }
+    ],
+    "icp_summary": {
+      "industry_segments": [
+        "sample string"
+      ],
+      "company_size_bands": [
+        "sample string"
+      ],
+      "tech_stack_hints": [
+        "sample string"
+      ],
+      "geographic_focus": [
+        "sample string"
+      ]
+    },
+    "enriched_contacts": [
+      {
+        "full_name": "sample string",
+        "job_title": "sample string",
+        "company": "sample string",
+        "org_unit": "sample string",
+        "location": "sample string",
+        "linkedin_url": "sample string",
+        "email": "sample string",
+        "confidence": "sample string",
+        "needs_review": false,
+        "source_reports": [
+          "sample string"
+        ],
+        "persona_tags": [
+          "sample string"
+        ]
+      }
+    ],
+    "email_sequences": [
+      {
+        "contact_name": "sample string",
+        "persona_tag": "sample string",
+        "emails": [
+          {
+            "variant_type": "sample string",
+            "subject_line": "sample string",
+            "body": "sample string",
+            "cta": "sample string",
+            "cited_claims": [
+              "sample string"
+            ],
+            "compliance_footer": "sample string"
+          }
+        ]
+      }
+    ],
+    "quality_gates": {
+      "groundedness_pass": false,
+      "dedup_pass": false,
+      "confidence_threshold_met": false,
+      "issues_flagged": [
+        "sample string"
+      ]
+    },
+    "total_contacts": 0,
+    "total_emails": 0
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/file.pdf"
+      }
+    ]
+  }
+}

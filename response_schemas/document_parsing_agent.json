@@ -1,0 +1,44 @@
+{
+  "agent_name": "Document Parsing Agent",
+  "agent_id": "699ee5beff3015f83d7a80f3",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "DocumentParsingResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "document_title": {"type": "string"},
+          "total_chunks": {"type": "number"},
+          "chunks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "chunk_id": {"type": "string"},
+                "section_path": {"type": "string"},
+                "text": {"type": "string"},
+                "page_number": {"type": "number"},
+                "content_type": {"type": "string"},
+                "has_table": {"type": "boolean"},
+                "is_contributor_section": {"type": "boolean"}
+              },
+              "required": ["chunk_id", "section_path", "text", "page_number", "content_type", "has_table", "is_contributor_section"],
+              "additionalProperties": false
+            }
+          },
+          "sections_outline": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        },
+        "required": ["document_title", "total_chunks", "chunks", "sections_outline"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

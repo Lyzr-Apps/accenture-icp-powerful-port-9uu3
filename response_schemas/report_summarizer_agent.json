@@ -1,0 +1,64 @@
+{
+  "agent_name": "Report Summarizer Agent",
+  "agent_id": "699ee5e42a8693f427efc2e7",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "ReportSummarizerResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "report_title": {"type": "string"},
+          "executive_summary": {"type": "string"},
+          "key_claims": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "claim": {"type": "string"},
+                "citation_ref": {"type": "string"},
+                "page_section": {"type": "string"},
+                "confidence_score": {"type": "number"},
+                "industry_relevance": {"type": "array", "items": {"type": "string"}}
+              },
+              "required": ["claim", "citation_ref", "page_section", "confidence_score", "industry_relevance"],
+              "additionalProperties": false
+            }
+          },
+          "industry_relevance_map": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "industry": {"type": "string"},
+                "relevance_score": {"type": "number"},
+                "key_themes": {"type": "array", "items": {"type": "string"}}
+              },
+              "required": ["industry", "relevance_score", "key_themes"],
+              "additionalProperties": false
+            }
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "signal_type": {"type": "string"},
+                "description": {"type": "string"},
+                "source_ref": {"type": "string"}
+              },
+              "required": ["signal_type", "description", "source_ref"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["report_title", "executive_summary", "key_claims", "industry_relevance_map", "signals"],
+        "additionalProperties": false
+      }
+    }
+  }
+}
