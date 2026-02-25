@@ -1,0 +1,24 @@
+TASK_COMPLETED
+Project: Accenture ABM Intelligence Platform
+Completed: 2026-02-25
+
+Architecture: Manager-Subagent (1 manager + 8 sub-agents)
+Knowledge Base: 699ee578c9ac7bb71c08b9cc (4 Accenture AI reports)
+
+Agents:
+- Playbook Orchestrator (Manager): 699ee645c0628a36907949b8
+- Source Discovery Agent: 699ee5a328faeef293503944
+- Document Acquisition Agent: 699ee5b18c35cfd5b5590bd2
+- Document Parsing Agent: 699ee5beff3015f83d7a80f3
+- Report Summarizer Agent: 699ee5e42a8693f427efc2e7
+- Persona Extraction Agent: 699ee5f52a8693f427efc2f7
+- Contributor Extraction Agent: 699ee6042a8693f427efc305
+- Contact Enrichment Agent: 699ee622ff3015f83d7a8118
+- ABM Email Generator Agent: 699ee5d18c35cfd5b5590bf0
+
+Updates Applied:
+1. Per-report data model: report_playbooks[] with nested contributors[]
+2. Updated Report Summarizer, Contributor Extraction, and Manager agents
+3. Updated response schemas to match per-report structure
+4. Rebuilt UI with topic filter bar and per-report cards with contributors tables
+5. Each report shows authors/contributors with email, LinkedIn URL, confidence

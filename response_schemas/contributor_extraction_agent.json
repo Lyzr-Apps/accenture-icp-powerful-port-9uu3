@@ -12,25 +12,34 @@
       "schema": {
         "type": "object",
         "properties": {
-          "contributors": {
+          "report_contributors": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "full_name": {"type": "string"},
-                "report_role": {"type": "string"},
-                "org_unit": {"type": "string"},
-                "evidence_chunks": {"type": "array", "items": {"type": "string"}},
-                "source_reports": {"type": "array", "items": {"type": "string"}}
+                "report_title": {"type": "string"},
+                "contributors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "full_name": {"type": "string"},
+                      "report_role": {"type": "string"},
+                      "org_unit": {"type": "string"}
+                    },
+                    "required": ["full_name", "report_role", "org_unit"],
+                    "additionalProperties": false
+                  }
+                }
               },
-              "required": ["full_name", "report_role", "org_unit", "evidence_chunks", "source_reports"],
+              "required": ["report_title", "contributors"],
               "additionalProperties": false
             }
           },
-          "total_extracted": {"type": "number"},
-          "sections_searched": {"type": "array", "items": {"type": "string"}}
+          "total_contributors": {"type": "number"},
+          "total_reports_searched": {"type": "number"}
         },
-        "required": ["contributors", "total_extracted", "sections_searched"],
+        "required": ["report_contributors", "total_contributors", "total_reports_searched"],
         "additionalProperties": false
       }
     }

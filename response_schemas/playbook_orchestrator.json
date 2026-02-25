@@ -13,48 +13,62 @@
         "type": "object",
         "properties": {
           "playbook_id": {"type": "string"},
-          "report_title": {"type": "string"},
           "generation_date": {"type": "string"},
           "pipeline_status": {"type": "string"},
-          "executive_summary": {"type": "string"},
-          "key_claims": {
+          "report_playbooks": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "claim": {"type": "string"},
-                "citation_ref": {"type": "string"},
-                "page_section": {"type": "string"},
-                "confidence_score": {"type": "number"},
-                "industry_relevance": {"type": "array", "items": {"type": "string"}}
+                "report_title": {"type": "string"},
+                "executive_summary": {"type": "string"},
+                "key_claims": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "claim": {"type": "string"},
+                      "citation_ref": {"type": "string"},
+                      "page_section": {"type": "string"},
+                      "confidence_score": {"type": "number"}
+                    },
+                    "required": ["claim", "citation_ref", "page_section", "confidence_score"],
+                    "additionalProperties": false
+                  }
+                },
+                "topic_tags": {"type": "array", "items": {"type": "string"}},
+                "industry_relevance": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "industry": {"type": "string"},
+                      "relevance_score": {"type": "number"}
+                    },
+                    "required": ["industry", "relevance_score"],
+                    "additionalProperties": false
+                  }
+                },
+                "contributors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "full_name": {"type": "string"},
+                      "report_role": {"type": "string"},
+                      "org_unit": {"type": "string"},
+                      "job_title": {"type": "string"},
+                      "company": {"type": "string"},
+                      "email": {"type": "string"},
+                      "linkedin_url": {"type": "string"},
+                      "confidence": {"type": "string"}
+                    },
+                    "required": ["full_name", "report_role", "org_unit", "job_title", "company", "email", "linkedin_url", "confidence"],
+                    "additionalProperties": false
+                  }
+                }
               },
-              "required": ["claim", "citation_ref", "page_section", "confidence_score", "industry_relevance"],
-              "additionalProperties": false
-            }
-          },
-          "industry_relevance_map": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "industry": {"type": "string"},
-                "relevance_score": {"type": "number"},
-                "key_themes": {"type": "array", "items": {"type": "string"}}
-              },
-              "required": ["industry", "relevance_score", "key_themes"],
-              "additionalProperties": false
-            }
-          },
-          "signals": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "signal_type": {"type": "string"},
-                "description": {"type": "string"},
-                "source_ref": {"type": "string"}
-              },
-              "required": ["signal_type", "description", "source_ref"],
+              "required": ["report_title", "executive_summary", "key_claims", "topic_tags", "industry_relevance", "contributors"],
               "additionalProperties": false
             }
           },
@@ -148,9 +162,9 @@
             "additionalProperties": false
           },
           "total_contacts": {"type": "number"},
-          "total_emails": {"type": "number"}
+          "total_reports": {"type": "number"}
         },
-        "required": ["playbook_id", "report_title", "generation_date", "pipeline_status", "executive_summary", "key_claims", "industry_relevance_map", "signals", "personas", "icp_summary", "enriched_contacts", "email_sequences", "quality_gates", "total_contacts", "total_emails"],
+        "required": ["playbook_id", "generation_date", "pipeline_status", "report_playbooks", "personas", "icp_summary", "enriched_contacts", "email_sequences", "quality_gates", "total_contacts", "total_reports"],
         "additionalProperties": false
       }
     }

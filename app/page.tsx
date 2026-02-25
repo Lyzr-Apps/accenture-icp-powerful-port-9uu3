@@ -3,31 +3,43 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { callAIAgent } from '@/lib/aiAgent'
 import { useRAGKnowledgeBase, uploadAndTrainDocument, getDocuments, deleteDocuments } from '@/lib/ragKnowledgeBase'
-import { FiHome, FiBook, FiUsers, FiSettings, FiChevronDown, FiChevronRight, FiCheck, FiAlertTriangle, FiDownload, FiCopy, FiExternalLink, FiSearch, FiUpload, FiTrash2, FiMail, FiUser, FiFileText, FiBookOpen, FiX, FiMenu, FiLoader, FiTarget, FiActivity, FiShield, FiClock, FiZap, FiGlobe, FiDatabase, FiLayers } from 'react-icons/fi'
+import { FiHome, FiBook, FiUsers, FiSettings, FiChevronDown, FiChevronRight, FiCheck, FiAlertTriangle, FiDownload, FiCopy, FiExternalLink, FiSearch, FiUpload, FiTrash2, FiMail, FiUser, FiFileText, FiBookOpen, FiX, FiMenu, FiLoader, FiTarget, FiActivity, FiShield, FiClock, FiZap, FiGlobe, FiDatabase, FiLayers, FiTag, FiHash } from 'react-icons/fi'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MANAGER_AGENT_ID = '699ee645c0628a36907949b8'
 const RAG_ID = '699ee578c9ac7bb71c08b9cc'
 
 // ─── TypeScript Interfaces ───────────────────────────────────────────────────
-interface KeyClaim {
+interface ReportContributor {
+  full_name: string
+  report_role: string
+  org_unit: string
+  job_title: string
+  company: string
+  email: string
+  linkedin_url: string
+  confidence: string
+}
+
+interface ReportKeyClaim {
   claim: string
   citation_ref: string
   page_section: string
   confidence_score: number
-  industry_relevance: string[]
 }
 
-interface IndustryRelevance {
+interface ReportIndustryRelevance {
   industry: string
   relevance_score: number
-  key_themes: string[]
 }
 
-interface Signal {
-  signal_type: string
-  description: string
-  source_ref: string
+interface ReportPlaybook {
+  report_title: string
+  executive_summary: string
+  key_claims: ReportKeyClaim[]
+  topic_tags: string[]
+  industry_relevance: ReportIndustryRelevance[]
+  contributors: ReportContributor[]
 }
 
 interface Persona {
@@ -86,20 +98,16 @@ interface QualityGates {
 
 interface PlaybookData {
   playbook_id: string
-  report_title: string
   generation_date: string
   pipeline_status: string
-  executive_summary: string
-  key_claims: KeyClaim[]
-  industry_relevance_map: IndustryRelevance[]
-  signals: Signal[]
+  report_playbooks: ReportPlaybook[]
   personas: Persona[]
   icp_summary: ICPSummary
   enriched_contacts: EnrichedContact[]
   email_sequences: EmailSequence[]
   quality_gates: QualityGates
   total_contacts: number
-  total_emails: number
+  total_reports: number
   artifact_files?: { file_url: string; name?: string; format_type?: string }[]
 }
 
@@ -107,73 +115,133 @@ type ActiveSection = 'dashboard' | 'playbooks' | 'contacts' | 'settings'
 
 // ─── Sample Data ─────────────────────────────────────────────────────────────
 const SAMPLE_PLAYBOOK: PlaybookData = {
-  playbook_id: 'PB-2025-0147',
-  report_title: 'Accenture Cloud-First Strategy for Financial Services 2025',
-  generation_date: '2025-02-24T14:30:00Z',
+  playbook_id: 'PB-2026-0001',
+  generation_date: '2026-02-25T14:30:00Z',
   pipeline_status: 'completed',
-  executive_summary: 'This comprehensive playbook synthesizes insights from Accenture\'s latest research on cloud-first transformation in financial services. The report identifies critical inflection points where legacy institutions must accelerate migration to remain competitive. Key findings include a 40% cost reduction potential through intelligent cloud orchestration, emergence of AI-native banking platforms, and regulatory shifts favoring cloud-native compliance frameworks. The analysis covers 12 major banking institutions across North America and EMEA, revealing consistent patterns in digital transformation readiness and technology adoption curves.',
-  key_claims: [
-    { claim: '73% of banking executives plan to increase cloud spending by 30%+ in 2025', citation_ref: 'ACN-FS-2025-pg12', page_section: 'Executive Overview, p.12', confidence_score: 0.92, industry_relevance: ['Banking', 'Financial Services'] },
-    { claim: 'AI-native platforms reduce operational costs by 40% within 18 months of deployment', citation_ref: 'ACN-FS-2025-pg28', page_section: 'Cost Analysis, p.28', confidence_score: 0.85, industry_relevance: ['Banking', 'Insurance', 'Capital Markets'] },
-    { claim: 'Regulatory compliance automation delivers 60% faster audit cycles', citation_ref: 'ACN-FS-2025-pg45', page_section: 'Compliance Framework, p.45', confidence_score: 0.78, industry_relevance: ['Banking', 'Insurance'] },
-    { claim: 'Multi-cloud strategies outperform single-vendor approaches by 2.3x on resilience metrics', citation_ref: 'ACN-FS-2025-pg33', page_section: 'Architecture Patterns, p.33', confidence_score: 0.88, industry_relevance: ['Financial Services', 'Capital Markets'] },
-  ],
-  industry_relevance_map: [
-    { industry: 'Banking', relevance_score: 0.95, key_themes: ['Cloud Migration', 'AI-Native Platforms', 'Cost Optimization'] },
-    { industry: 'Insurance', relevance_score: 0.82, key_themes: ['Claims Automation', 'Risk Modeling', 'Compliance'] },
-    { industry: 'Capital Markets', relevance_score: 0.76, key_themes: ['Real-time Analytics', 'Multi-cloud', 'Trading Infrastructure'] },
-  ],
-  signals: [
-    { signal_type: 'Technology Adoption', description: 'Rapid adoption of Kubernetes-native banking platforms across tier-1 institutions', source_ref: 'ACN-FS-2025-pg18' },
-    { signal_type: 'Regulatory Change', description: 'OCC and FCA issuing new guidance on cloud-native compliance frameworks', source_ref: 'ACN-FS-2025-pg42' },
-    { signal_type: 'Market Shift', description: 'Fintech challengers capturing 15% market share through cloud-first approaches', source_ref: 'ACN-FS-2025-pg7' },
-    { signal_type: 'Budget Reallocation', description: 'IT budgets shifting from maintenance (60/40) to innovation (40/60) ratios', source_ref: 'ACN-FS-2025-pg22' },
+  report_playbooks: [
+    {
+      report_title: 'Accenture Technology Vision 2025',
+      executive_summary: 'This report explores how technology will reshape industries through the convergence of AI, cloud computing, and digital transformation. It identifies five key trends: the rise of AI agents as digital collaborators, spatial computing transforming physical experiences, the emergence of a new technology fabric, trust architecture evolution, and the human-AI partnership imperative.',
+      key_claims: [
+        { claim: '95% of executives agree AI will be transformative for their industry within 3 years', citation_ref: 'TV-2025-pg8', page_section: 'Executive Overview, p.8', confidence_score: 0.91 },
+        { claim: 'Organizations investing in AI-native platforms see 3.2x faster innovation cycles', citation_ref: 'TV-2025-pg23', page_section: 'Technology Fabric, p.23', confidence_score: 0.85 },
+        { claim: 'Cloud-first enterprises achieve 45% better operational resilience', citation_ref: 'TV-2025-pg31', page_section: 'Infrastructure Evolution, p.31', confidence_score: 0.88 },
+      ],
+      topic_tags: ['AI Transformation', 'Cloud', 'Technology', 'Digital Transformation', 'GenAI'],
+      industry_relevance: [
+        { industry: 'Financial Services', relevance_score: 0.92 },
+        { industry: 'Technology', relevance_score: 0.95 },
+        { industry: 'Banking', relevance_score: 0.78 },
+      ],
+      contributors: [
+        { full_name: 'Paul Daugherty', report_role: 'Lead Author', org_unit: 'Accenture Research', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', email: 'paul.daugherty@accenture.com', linkedin_url: 'https://linkedin.com/in/pauldaugherty', confidence: 'high' },
+        { full_name: 'Marc Carrel-Billiard', report_role: 'Contributing Author', org_unit: 'Accenture Technology Innovation', job_title: 'Global Technology Innovation Lead', company: 'Accenture', email: 'marc.carrel-billiard@accenture.com', linkedin_url: 'https://linkedin.com/in/marccb', confidence: 'high' },
+        { full_name: 'Michael Biltz', report_role: 'Lead Researcher', org_unit: 'Accenture Research', job_title: 'Managing Director - Technology Vision', company: 'Accenture', email: 'michael.biltz@accenture.com', linkedin_url: 'https://linkedin.com/in/michaelbiltz', confidence: 'medium' },
+      ],
+    },
+    {
+      report_title: 'The Art of AI Maturity',
+      executive_summary: 'This research identifies what separates AI Leaders from AI Achievers across industries. The report quantifies the maturity gap and provides a framework for organizations to advance from experimental AI to enterprise-scale deployment, covering data strategy, talent, governance, and technology infrastructure.',
+      key_claims: [
+        { claim: 'Only 12% of companies have reached AI maturity sufficient to achieve superior growth', citation_ref: 'AIM-pg5', page_section: 'Key Findings, p.5', confidence_score: 0.93 },
+        { claim: 'AI Leaders achieve 2.5x higher revenue growth than AI Experimenters', citation_ref: 'AIM-pg18', page_section: 'Performance Analysis, p.18', confidence_score: 0.89 },
+        { claim: 'Responsible AI frameworks correlate with 35% higher stakeholder trust scores', citation_ref: 'AIM-pg42', page_section: 'Governance Impact, p.42', confidence_score: 0.82 },
+      ],
+      topic_tags: ['AI Transformation', 'Technology', 'Data Analytics', 'Automation'],
+      industry_relevance: [
+        { industry: 'Banking', relevance_score: 0.88 },
+        { industry: 'Insurance', relevance_score: 0.84 },
+        { industry: 'Financial Services', relevance_score: 0.91 },
+      ],
+      contributors: [
+        { full_name: 'Lan Guan', report_role: 'Lead Author', org_unit: 'Accenture AI', job_title: 'Chief AI Officer', company: 'Accenture', email: 'lan.guan@accenture.com', linkedin_url: 'https://linkedin.com/in/languanai', confidence: 'high' },
+        { full_name: 'Sanjeev Vohra', report_role: 'Contributing Author', org_unit: 'Accenture Technology', job_title: 'Group Technology Officer - Technology', company: 'Accenture', email: 'sanjeev.vohra@accenture.com', linkedin_url: 'https://linkedin.com/in/sanjeevvohra', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Making Reinvention Real With Generative AI',
+      executive_summary: 'This report examines how organizations are moving beyond GenAI experimentation to enterprise-scale transformation. It provides a practical framework for scaling generative AI across functions, with detailed case studies from financial services, insurance, and technology sectors.',
+      key_claims: [
+        { claim: '63% of organizations have moved at least one GenAI use case to production', citation_ref: 'MRR-pg11', page_section: 'Adoption Status, p.11', confidence_score: 0.87 },
+        { claim: 'GenAI-enabled processes deliver 40-60% efficiency gains in document processing', citation_ref: 'MRR-pg26', page_section: 'Efficiency Impact, p.26', confidence_score: 0.84 },
+      ],
+      topic_tags: ['GenAI', 'AI Transformation', 'Cloud', 'Financial Services', 'Banking', 'Insurance', 'Automation'],
+      industry_relevance: [
+        { industry: 'Banking', relevance_score: 0.93 },
+        { industry: 'Insurance', relevance_score: 0.89 },
+        { industry: 'Financial Services', relevance_score: 0.94 },
+      ],
+      contributors: [
+        { full_name: 'Julie Sweet', report_role: 'Executive Sponsor', org_unit: 'Accenture Executive Office', job_title: 'Chair & Chief Executive Officer', company: 'Accenture', email: 'julie.sweet@accenture.com', linkedin_url: 'https://linkedin.com/in/juliesweet', confidence: 'high' },
+        { full_name: 'Jack Azagury', report_role: 'Contributing Author', org_unit: 'Accenture Strategy & Consulting', job_title: 'Group Chief Executive - Strategy & Consulting', company: 'Accenture', email: 'jack.azagury@accenture.com', linkedin_url: 'https://linkedin.com/in/jackazagury', confidence: 'medium' },
+        { full_name: 'Karthik Narain', report_role: 'Contributing Author', org_unit: 'Accenture Technology', job_title: 'Group Chief Executive - Technology', company: 'Accenture', email: 'karthik.narain@accenture.com', linkedin_url: 'https://linkedin.com/in/karthiknarain', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Reinvention in the Age of Generative AI',
+      executive_summary: 'This foundational report frames the generative AI revolution as the next wave of enterprise reinvention. It argues that organizations must fundamentally rethink operations, talent strategy, and technology architecture to capture the transformative potential of generative AI across all business functions.',
+      key_claims: [
+        { claim: '98% of executives agree GenAI will play a significant role in their organizations within 3-5 years', citation_ref: 'RAGA-pg6', page_section: 'Executive Consensus, p.6', confidence_score: 0.94 },
+        { claim: 'Early GenAI adopters report 25-40% cost reduction in targeted operations', citation_ref: 'RAGA-pg34', page_section: 'Cost Impact Analysis, p.34', confidence_score: 0.81 },
+      ],
+      topic_tags: ['GenAI', 'AI Transformation', 'Digital Transformation', 'Technology', 'Cloud'],
+      industry_relevance: [
+        { industry: 'Financial Services', relevance_score: 0.90 },
+        { industry: 'Banking', relevance_score: 0.85 },
+        { industry: 'Insurance', relevance_score: 0.82 },
+      ],
+      contributors: [
+        { full_name: 'Paul Daugherty', report_role: 'Lead Author', org_unit: 'Accenture Research', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', email: 'paul.daugherty@accenture.com', linkedin_url: 'https://linkedin.com/in/pauldaugherty', confidence: 'high' },
+        { full_name: 'Jim Wilson', report_role: 'Contributing Author', org_unit: 'Accenture Research', job_title: 'Global Managing Director - Thought Leadership & Research', company: 'Accenture', email: 'james.wilson@accenture.com', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', confidence: 'high' },
+      ],
+    },
   ],
   personas: [
     { role_title: 'Chief Technology Officer', seniority_level: 'C-Suite', kpis: ['System uptime 99.99%', 'Time-to-market reduction', 'Technical debt ratio'], pain_points: ['Legacy system integration complexity', 'Talent shortage for cloud-native development', 'Multi-vendor orchestration overhead'], buying_triggers: ['Board mandate for digital transformation', 'Competitive pressure from fintechs', 'Regulatory compliance deadlines'], objections: ['Migration risk to production systems', 'Total cost of ownership concerns', 'Vendor lock-in fears'], committee_neighbors: ['CIO', 'CISO', 'CFO'], report_fit_score: 94 },
     { role_title: 'VP of Digital Transformation', seniority_level: 'VP/Director', kpis: ['Digital revenue percentage', 'Customer digital adoption rate', 'Process automation coverage'], pain_points: ['Organizational resistance to change', 'Siloed technology decisions', 'Measuring transformation ROI'], buying_triggers: ['CEO strategic vision alignment', 'Customer experience benchmarking gaps', 'Operational efficiency targets'], objections: ['Timeline uncertainty', 'Resource allocation conflicts', 'Change management complexity'], committee_neighbors: ['CTO', 'COO', 'Head of Product'], report_fit_score: 87 },
-    { role_title: 'Head of Infrastructure', seniority_level: 'VP/Director', kpis: ['Infrastructure cost per transaction', 'Deployment frequency', 'Mean time to recovery'], pain_points: ['Hybrid cloud complexity', 'Security posture management', 'Capacity planning accuracy'], buying_triggers: ['Data center contract renewals', 'Performance SLA breaches', 'Scalability limitations'], objections: ['Team retraining requirements', 'Operational continuity during migration', 'Compliance certification timelines'], committee_neighbors: ['CTO', 'CISO', 'VP Engineering'], report_fit_score: 81 },
   ],
   icp_summary: {
-    industry_segments: ['Banking', 'Insurance', 'Capital Markets', 'Wealth Management'],
-    company_size_bands: ['Enterprise (10,000+ employees)', 'Large (5,000-10,000)', 'Mid-Market (1,000-5,000)'],
-    tech_stack_hints: ['AWS', 'Azure', 'Kubernetes', 'Terraform', 'Snowflake', 'Databricks'],
-    geographic_focus: ['North America', 'United Kingdom', 'Western Europe', 'Singapore'],
+    industry_segments: ['Banking', 'Insurance', 'Financial Services', 'Technology'],
+    company_size_bands: ['Enterprise (10,000+)', 'Large (5,000-10,000)'],
+    tech_stack_hints: ['AWS', 'Azure', 'NVIDIA', 'Kubernetes', 'Terraform'],
+    geographic_focus: ['North America', 'Western Europe', 'APAC'],
   },
   enriched_contacts: [
-    { full_name: 'Sarah Chen', job_title: 'Chief Technology Officer', company: 'Global Trust Bank', org_unit: 'Technology & Innovation', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/sarahchen-cto', email: 'schen@globaltrustbank.com', confidence: 'high', needs_review: false, source_reports: ['ACN-FS-2025'], persona_tags: ['CTO', 'C-Suite'] },
-    { full_name: 'James Rodriguez', job_title: 'VP Digital Transformation', company: 'Atlantic Financial Group', org_unit: 'Digital Strategy', location: 'London, UK', linkedin_url: 'https://linkedin.com/in/jrodriguez-digital', email: 'j.rodriguez@atlanticfg.co.uk', confidence: 'high', needs_review: false, source_reports: ['ACN-FS-2025'], persona_tags: ['VP Digital', 'VP/Director'] },
-    { full_name: 'Priya Sharma', job_title: 'Head of Cloud Infrastructure', company: 'Pacific Insurance Corp', org_unit: 'IT Operations', location: 'Singapore', linkedin_url: 'https://linkedin.com/in/priyasharma-infra', email: 'p.sharma@pacificins.sg', confidence: 'medium', needs_review: true, source_reports: ['ACN-FS-2025'], persona_tags: ['Infrastructure', 'VP/Director'] },
-    { full_name: 'Michael Torres', job_title: 'CIO', company: 'Meridian Capital Markets', org_unit: 'Information Technology', location: 'Chicago, IL', linkedin_url: 'https://linkedin.com/in/mtorres-cio', email: 'mtorres@meridiancm.com', confidence: 'high', needs_review: false, source_reports: ['ACN-FS-2025'], persona_tags: ['CIO', 'C-Suite'] },
-    { full_name: 'Elena Vogt', job_title: 'Director of Compliance Technology', company: 'NordBank AG', org_unit: 'Risk & Compliance', location: 'Frankfurt, DE', linkedin_url: 'https://linkedin.com/in/elenavogt-compliance', email: 'e.vogt@nordbank.de', confidence: 'medium', needs_review: true, source_reports: ['ACN-FS-2025'], persona_tags: ['Compliance', 'Director'] },
+    { full_name: 'Paul Daugherty', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', org_unit: 'Accenture Research', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/pauldaugherty', email: 'paul.daugherty@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025', 'Reinvention in the Age of GenAI'], persona_tags: ['CTO', 'C-Suite'] },
+    { full_name: 'Lan Guan', job_title: 'Chief AI Officer', company: 'Accenture', org_unit: 'Accenture AI', location: 'San Francisco, CA', linkedin_url: 'https://linkedin.com/in/languanai', email: 'lan.guan@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Art of AI Maturity'], persona_tags: ['CAIO', 'C-Suite'] },
+    { full_name: 'Julie Sweet', job_title: 'Chair & CEO', company: 'Accenture', org_unit: 'Executive Office', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/juliesweet', email: 'julie.sweet@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Making Reinvention Real'], persona_tags: ['CEO', 'C-Suite'] },
+    { full_name: 'Marc Carrel-Billiard', job_title: 'Global Technology Innovation Lead', company: 'Accenture', org_unit: 'Technology Innovation', location: 'Paris, France', linkedin_url: 'https://linkedin.com/in/marccb', email: 'marc.carrel-billiard@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025'], persona_tags: ['Innovation', 'VP/Director'] },
+    { full_name: 'Jim Wilson', job_title: 'Global MD - Thought Leadership', company: 'Accenture', org_unit: 'Accenture Research', location: 'Boston, MA', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', email: 'james.wilson@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Reinvention in the Age of GenAI'], persona_tags: ['Research', 'VP/Director'] },
   ],
   email_sequences: [
     {
-      contact_name: 'Sarah Chen',
+      contact_name: 'Paul Daugherty',
       persona_tag: 'CTO',
       emails: [
-        { variant_type: 'Report-Led', subject_line: 'Accenture\'s Cloud-First Blueprint for Banking CTOs', body: 'Dear Sarah,\n\nAccenture\'s latest research reveals that 73% of banking executives are planning to increase cloud spending by 30%+ this year. As CTO of Global Trust Bank, your perspective on cloud-native transformation is uniquely valuable.\n\nThe report highlights how AI-native platforms are delivering 40% operational cost reductions within 18 months -- a metric directly aligned with your infrastructure modernization priorities.\n\nI\'d welcome the opportunity to share the full findings and discuss how these insights map to your strategic roadmap.', cta: 'Schedule a 20-minute briefing to review the key findings', cited_claims: ['73% cloud spending increase', '40% cost reduction via AI-native platforms'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
-        { variant_type: 'Contributor-Led', subject_line: 'Your expertise cited in Accenture\'s FS Cloud Strategy report', body: 'Dear Sarah,\n\nYour contributions to the discourse on cloud-native banking have been noted in Accenture\'s latest Financial Services research. The report specifically references infrastructure patterns that align with Global Trust Bank\'s published transformation methodology.\n\nWe believe your firsthand experience navigating multi-cloud orchestration at scale would enrich the conversation around the report\'s findings on resilience metrics.', cta: 'Join an exclusive roundtable discussion with peer CTOs', cited_claims: ['Multi-cloud resilience 2.3x outperformance'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
-        { variant_type: 'Pain-Point-Led', subject_line: 'Solving the legacy integration challenge for banking CTOs', body: 'Dear Sarah,\n\nThe complexity of legacy system integration remains the top barrier for banking CTOs pursuing cloud transformation. Accenture\'s latest research quantifies this challenge and, more importantly, outlines proven approaches that have delivered results at tier-1 institutions.\n\nThe findings suggest that targeted migration strategies can reduce integration overhead by 55% while maintaining regulatory compliance -- addressing two of the most critical concerns we hear from technology leaders like you.', cta: 'Access the executive summary and integration framework', cited_claims: ['Legacy integration complexity', 'Compliance automation 60% faster audits'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
-      ],
-    },
-    {
-      contact_name: 'James Rodriguez',
-      persona_tag: 'VP Digital',
-      emails: [
-        { variant_type: 'Report-Led', subject_line: 'Digital transformation benchmarks from Accenture\'s FS research', body: 'Dear James,\n\nAccenture\'s 2025 Financial Services Cloud Strategy report reveals critical benchmarks for digital transformation leaders. The research shows that organizations with cloud-first strategies are achieving 2.3x better resilience metrics and significantly faster time-to-market.\n\nAs VP of Digital Transformation at Atlantic Financial Group, these findings directly relate to your mandate for accelerating digital revenue growth.', cta: 'Download the digital transformation benchmark report', cited_claims: ['2.3x resilience improvement', 'Cloud-first strategy advantages'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
-        { variant_type: 'CTA-Led', subject_line: 'Exclusive briefing: Cloud strategy for FS digital leaders', body: 'Dear James,\n\nWe are hosting an exclusive virtual briefing for digital transformation leaders in financial services, featuring insights from Accenture\'s latest cloud strategy research.\n\nThe session will cover practical frameworks for measuring transformation ROI, overcoming organizational resistance, and aligning technology decisions with strategic vision -- all areas critical to your role at Atlantic Financial Group.', cta: 'Reserve your spot for the executive briefing', cited_claims: ['Transformation ROI measurement', 'Organizational change management'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
+        { variant_type: 'Report-Led', subject_line: 'Insights from your Technology Vision 2025 report', body: 'Dear Paul,\n\nYour Technology Vision 2025 report highlights that 95% of executives see AI as transformative within 3 years. As the lead author, your perspective on AI-native platforms driving 3.2x faster innovation cycles is compelling.\n\nWe would value the opportunity to discuss how Lyzr AI agent orchestration aligns with the technology fabric vision you outlined.', cta: 'Schedule a 20-minute briefing', cited_claims: ['95% executives agree AI transformative', '3.2x faster innovation cycles'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
+        { variant_type: 'Contributor-Led', subject_line: 'Your authorship of Technology Vision and Reinvention reports', body: 'Dear Paul,\n\nAs lead author across both the Technology Vision 2025 and Reinvention in the Age of GenAI reports, your insights on enterprise AI transformation are shaping industry strategy.\n\nWe believe your vision for cloud-first enterprises achieving 45% better resilience aligns closely with the autonomous AI agent capabilities we are building at Lyzr.', cta: 'Join an exclusive CTO roundtable', cited_claims: ['Cloud-first 45% better resilience'], compliance_footer: 'You are receiving this email based on your professional role. Reply STOP to opt out.' },
       ],
     },
   ],
-  quality_gates: {
-    groundedness_pass: true,
-    dedup_pass: true,
-    confidence_threshold_met: true,
-    issues_flagged: [],
-  },
+  quality_gates: { groundedness_pass: true, dedup_pass: true, confidence_threshold_met: true, issues_flagged: [] },
   total_contacts: 5,
-  total_emails: 5,
+  total_reports: 4,
+}
+
+// ─── Topic Tag Color Map ─────────────────────────────────────────────────────
+function topicTagColor(tag: string): string {
+  const t = tag.toLowerCase()
+  if (t.includes('ai transformation')) return 'text-amber-300 border-amber-400/30 bg-amber-400/10'
+  if (t === 'genai') return 'text-orange-300 border-orange-400/30 bg-orange-400/10'
+  if (t === 'cloud') return 'text-sky-300 border-sky-400/30 bg-sky-400/10'
+  if (t === 'technology') return 'text-cyan-300 border-cyan-400/30 bg-cyan-400/10'
+  if (t.includes('banking')) return 'text-emerald-300 border-emerald-400/30 bg-emerald-400/10'
+  if (t.includes('insurance')) return 'text-purple-300 border-purple-400/30 bg-purple-400/10'
+  if (t.includes('financial')) return 'text-green-300 border-green-400/30 bg-green-400/10'
+  if (t.includes('digital')) return 'text-indigo-300 border-indigo-400/30 bg-indigo-400/10'
+  if (t.includes('automation')) return 'text-rose-300 border-rose-400/30 bg-rose-400/10'
+  if (t.includes('data')) return 'text-teal-300 border-teal-400/30 bg-teal-400/10'
+  return 'text-primary border-primary/20 bg-primary/10'
 }
 
 // ─── Pipeline Steps ──────────────────────────────────────────────────────────
@@ -207,20 +275,23 @@ function parseAgentResponse(result: any): PlaybookData | null {
 
   return {
     playbook_id: data.playbook_id || '',
-    report_title: data.report_title || '',
     generation_date: data.generation_date || new Date().toISOString(),
     pipeline_status: data.pipeline_status || 'completed',
-    executive_summary: data.executive_summary || '',
-    key_claims: Array.isArray(data.key_claims) ? data.key_claims : [],
-    industry_relevance_map: Array.isArray(data.industry_relevance_map) ? data.industry_relevance_map : [],
-    signals: Array.isArray(data.signals) ? data.signals : [],
+    report_playbooks: Array.isArray(data.report_playbooks) ? data.report_playbooks.map((rp: any) => ({
+      report_title: rp.report_title || '',
+      executive_summary: rp.executive_summary || '',
+      key_claims: Array.isArray(rp.key_claims) ? rp.key_claims : [],
+      topic_tags: Array.isArray(rp.topic_tags) ? rp.topic_tags : [],
+      industry_relevance: Array.isArray(rp.industry_relevance) ? rp.industry_relevance : [],
+      contributors: Array.isArray(rp.contributors) ? rp.contributors : [],
+    })) : [],
     personas: Array.isArray(data.personas) ? data.personas : [],
     icp_summary: data.icp_summary || { industry_segments: [], company_size_bands: [], tech_stack_hints: [], geographic_focus: [] },
     enriched_contacts: Array.isArray(data.enriched_contacts) ? data.enriched_contacts : [],
     email_sequences: Array.isArray(data.email_sequences) ? data.email_sequences : [],
     quality_gates: data.quality_gates || { groundedness_pass: false, dedup_pass: false, confidence_threshold_met: false, issues_flagged: [] },
     total_contacts: data.total_contacts || 0,
-    total_emails: data.total_emails || 0,
+    total_reports: data.total_reports || 0,
     artifact_files: artifactFiles,
   }
 }
@@ -309,6 +380,18 @@ function formatInline(text: string) {
   const parts = text.split(/\*\*(.*?)\*\*/g)
   if (parts.length === 1) return text
   return parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-semibold">{part}</strong> : part)
+}
+
+// ─── Collect all unique topic tags from playbook ─────────────────────────────
+function collectAllTopicTags(playbook: PlaybookData): string[] {
+  const tagSet = new Set<string>()
+  const reports = Array.isArray(playbook?.report_playbooks) ? playbook.report_playbooks : []
+  reports.forEach(rp => {
+    if (Array.isArray(rp?.topic_tags)) {
+      rp.topic_tags.forEach(t => tagSet.add(t))
+    }
+  })
+  return Array.from(tagSet).sort()
 }
 
 // ─── ErrorBoundary ───────────────────────────────────────────────────────────
@@ -436,7 +519,7 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
   showSample: boolean
   errorMsg: string
 }) {
-  const [urls, setUrls] = useState(showSample ? 'https://www.accenture.com/us-en/insights/cloud/cloud-first-strategy\nhttps://www.accenture.com/us-en/insights/banking/future-banking' : '')
+  const [urls, setUrls] = useState(showSample ? 'https://www.accenture.com/us-en/insights/technology/technology-trends-2025\nhttps://www.accenture.com/us-en/insights/artificial-intelligence/ai-maturity-and-transformation' : '')
   const [industry, setIndustry] = useState(showSample ? 'Banking' : 'All')
   const [region, setRegion] = useState(showSample ? 'NA' : 'Global')
   const [persona, setPersona] = useState(showSample ? 'C-Suite' : 'All')
@@ -448,7 +531,7 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
       <div className="lg:col-span-3 space-y-6">
         <div>
           <h2 className="font-serif text-2xl tracking-wider mb-1">Generate Playbook</h2>
-          <p className="text-muted-foreground text-xs tracking-wider uppercase">Provide seed URLs and parameters to generate a targeted ABM playbook</p>
+          <p className="text-muted-foreground text-xs tracking-wider uppercase">Provide seed URLs and parameters to generate a per-report ABM intelligence playbook</p>
         </div>
 
         <div className="bg-card border border-border p-6 space-y-5">
@@ -470,8 +553,8 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
                 <option value="All">All Industries</option>
                 <option value="Banking">Banking</option>
                 <option value="Insurance">Insurance</option>
-                <option value="Capital Markets">Capital Markets</option>
-                <option value="Wealth Management">Wealth Management</option>
+                <option value="Financial Services">Financial Services</option>
+                <option value="Technology">Technology</option>
               </select>
             </div>
             <div>
@@ -551,25 +634,28 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
           </div>
         ) : (
           <div className="space-y-3">
-            {savedPlaybooks.map((pb, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setCurrentPlaybook(pb); setActiveSection('playbooks') }}
-                className="w-full text-left bg-card border border-border p-4 hover:border-primary/30 transition-all duration-200 group"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <h4 className="text-sm font-serif tracking-wider group-hover:text-primary transition-colors line-clamp-2">{pb.report_title || 'Untitled Playbook'}</h4>
-                  <span className={`text-xs tracking-widest uppercase px-2 py-0.5 border flex-shrink-0 ${pb.pipeline_status === 'completed' ? 'text-green-400 border-green-400/30' : 'text-amber-400 border-amber-400/30'}`}>
-                    {pb.pipeline_status || 'Unknown'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><FiUsers size={11} /> {pb.total_contacts ?? 0} contacts</span>
-                  <span className="flex items-center gap-1"><FiMail size={11} /> {pb.total_emails ?? 0} emails</span>
-                  <span className="flex items-center gap-1"><FiClock size={11} /> {pb.generation_date ? new Date(pb.generation_date).toLocaleDateString() : 'N/A'}</span>
-                </div>
-              </button>
-            ))}
+            {savedPlaybooks.map((pb, idx) => {
+              const reportCount = Array.isArray(pb?.report_playbooks) ? pb.report_playbooks.length : 0
+              return (
+                <button
+                  key={idx}
+                  onClick={() => { setCurrentPlaybook(pb); setActiveSection('playbooks') }}
+                  className="w-full text-left bg-card border border-border p-4 hover:border-primary/30 transition-all duration-200 group"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h4 className="text-sm font-serif tracking-wider group-hover:text-primary transition-colors line-clamp-2">{pb.playbook_id || 'Untitled Playbook'}</h4>
+                    <span className={`text-xs tracking-widest uppercase px-2 py-0.5 border flex-shrink-0 ${pb.pipeline_status === 'completed' ? 'text-green-400 border-green-400/30' : 'text-amber-400 border-amber-400/30'}`}>
+                      {pb.pipeline_status || 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><FiFileText size={11} /> {reportCount} report{reportCount !== 1 ? 's' : ''}</span>
+                    <span className="flex items-center gap-1"><FiUsers size={11} /> {pb.total_contacts ?? 0} contacts</span>
+                    <span className="flex items-center gap-1"><FiClock size={11} /> {pb.generation_date ? new Date(pb.generation_date).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         )}
 
@@ -601,6 +687,186 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
   )
 }
 
+// ─── Report Card Component ───────────────────────────────────────────────────
+function ReportCard({ report, reportIndex, copiedId, setCopiedId }: {
+  report: ReportPlaybook
+  reportIndex: number
+  copiedId: string
+  setCopiedId: (id: string) => void
+}) {
+  const [summaryExpanded, setSummaryExpanded] = useState(reportIndex === 0)
+  const [claimsExpanded, setClaimsExpanded] = useState(false)
+  const [contributorsExpanded, setContributorsExpanded] = useState(true)
+
+  const contributors = Array.isArray(report?.contributors) ? report.contributors : []
+  const keyClaims = Array.isArray(report?.key_claims) ? report.key_claims : []
+  const topicTags = Array.isArray(report?.topic_tags) ? report.topic_tags : []
+  const industryRelevance = Array.isArray(report?.industry_relevance) ? report.industry_relevance : []
+
+  return (
+    <div className="bg-card border border-border border-l-2 border-l-primary">
+      {/* Report Title & Tags */}
+      <div className="p-6 pb-4">
+        <h3 className="font-serif text-xl tracking-wider mb-3">{report?.report_title || 'Untitled Report'}</h3>
+        <div className="flex flex-wrap gap-1.5">
+          {topicTags.map((tag, i) => (
+            <span key={i} className={`text-xs tracking-wider px-2 py-0.5 border ${topicTagColor(tag)}`}>
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Executive Summary */}
+      <div className="px-6 pb-4">
+        <button
+          onClick={() => setSummaryExpanded(!summaryExpanded)}
+          className="flex items-center gap-2 text-xs tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors mb-2"
+        >
+          {summaryExpanded ? <FiChevronDown size={12} /> : <FiChevronRight size={12} />}
+          Executive Summary
+        </button>
+        {summaryExpanded && (
+          <div className="text-sm leading-relaxed text-foreground/85 pl-5 border-l border-border/50">
+            {renderMarkdown(report?.executive_summary || '')}
+          </div>
+        )}
+      </div>
+
+      {/* Key Claims */}
+      <div className="px-6 pb-4">
+        <button
+          onClick={() => setClaimsExpanded(!claimsExpanded)}
+          className="flex items-center gap-2 text-xs tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors mb-2"
+        >
+          {claimsExpanded ? <FiChevronDown size={12} /> : <FiChevronRight size={12} />}
+          Key Claims
+          <span className="text-xs text-muted-foreground/60 normal-case tracking-normal">({keyClaims.length})</span>
+        </button>
+        {claimsExpanded && (
+          <div className="grid grid-cols-1 gap-3 pl-5">
+            {keyClaims.map((claim, idx) => (
+              <div key={idx} className="bg-secondary/30 border border-border/50 p-3">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <p className="text-sm flex-1">{claim.claim ?? ''}</p>
+                  <span className={`text-xs tracking-wider uppercase px-2 py-0.5 border flex-shrink-0 ${confidenceColor(claim.confidence_score ?? 0)}`}>
+                    {((claim.confidence_score ?? 0) * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FiFileText size={10} />
+                  <span>{claim.citation_ref ?? ''}</span>
+                  <span className="text-muted-foreground/30">|</span>
+                  <span>{claim.page_section ?? ''}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Industry Relevance */}
+      {industryRelevance.length > 0 && (
+        <div className="px-6 pb-4">
+          <div className="text-xs tracking-widest uppercase text-muted-foreground mb-2 pl-5">Industry Relevance</div>
+          <div className="flex flex-wrap gap-4 pl-5">
+            {industryRelevance.map((ind, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="text-xs text-foreground/70">{ind.industry ?? ''}</span>
+                <div className="w-20 bg-muted h-1.5 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${confidenceBarColor(ind.relevance_score ?? 0)} transition-all duration-500`} style={{ width: `${(ind.relevance_score ?? 0) * 100}%` }} />
+                </div>
+                <span className="text-xs text-muted-foreground">{((ind.relevance_score ?? 0) * 100).toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Contributors Section */}
+      <div className="px-6 pb-6">
+        <button
+          onClick={() => setContributorsExpanded(!contributorsExpanded)}
+          className="flex items-center gap-2 text-xs tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors mb-3"
+        >
+          {contributorsExpanded ? <FiChevronDown size={12} /> : <FiChevronRight size={12} />}
+          Authors & Contributors
+          <span className="text-xs tracking-wider px-1.5 py-0.5 bg-primary/15 text-primary border border-primary/20 normal-case">{contributors.length}</span>
+        </button>
+        {contributorsExpanded && contributors.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Name</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Role</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Title / Company</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Email</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal w-8">Li</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Conf.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contributors.map((contrib, cIdx) => {
+                  const emailCopyId = `report-${reportIndex}-contrib-${cIdx}`
+                  return (
+                    <tr key={cIdx} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                      <td className="p-2">
+                        <span className="font-serif tracking-wider">{contrib.full_name ?? ''}</span>
+                      </td>
+                      <td className="p-2">
+                        <span className="text-xs uppercase tracking-wider text-primary border border-primary/20 px-1.5 py-0.5 bg-primary/5">{contrib.report_role ?? ''}</span>
+                      </td>
+                      <td className="p-2 text-foreground/70">
+                        <div className="text-xs">{contrib.job_title ?? ''}</div>
+                        <div className="text-xs text-muted-foreground">{contrib.company ?? ''} {contrib.org_unit ? `/ ${contrib.org_unit}` : ''}</div>
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1">
+                          {contrib.email ? (
+                            <>
+                              <a href={`mailto:${contrib.email}`} className="text-xs text-foreground/70 hover:text-primary transition-colors">{contrib.email}</a>
+                              <button
+                                onClick={() => copyToClipboard(contrib.email ?? '', setCopiedId, emailCopyId)}
+                                className="text-muted-foreground hover:text-primary transition-colors p-0.5 flex-shrink-0"
+                              >
+                                {copiedId === emailCopyId ? <FiCheck size={11} className="text-green-400" /> : <FiCopy size={11} />}
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">--</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-2">
+                        {contrib.linkedin_url ? (
+                          <a href={contrib.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
+                            <FiExternalLink size={13} />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">--</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        <span className={`text-xs uppercase tracking-widest px-1.5 py-0.5 border ${confidenceColor(contrib.confidence ?? 'low')}`}>
+                          {contrib.confidence ?? 'N/A'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {contributorsExpanded && contributors.length === 0 && (
+          <div className="text-xs text-muted-foreground pl-5">No contributors extracted for this report</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Playbook Results Screen ─────────────────────────────────────────────────
 function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
   playbook: PlaybookData
@@ -608,13 +874,22 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
   setCopiedId: (id: string) => void
 }) {
   const [activeTab, setActiveTab] = useState(0)
+  const [selectedTopic, setSelectedTopic] = useState('All')
   const [expandedPersona, setExpandedPersona] = useState<number | null>(null)
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null)
   const [contactFilter, setContactFilter] = useState('')
   const [confidenceFilter, setConfidenceFilter] = useState('all')
   const [selectedContacts, setSelectedContacts] = useState<Set<number>>(new Set())
 
-  const tabs = ['Report Brief', 'Personas & ICPs', 'Enriched Contacts', 'ABM Emails']
+  const tabs = ['Reports & Contributors', 'Personas & ICPs', 'All Contacts', 'ABM Emails']
+
+  const allTopicTags = collectAllTopicTags(playbook)
+  const reportPlaybooks = Array.isArray(playbook?.report_playbooks) ? playbook.report_playbooks : []
+
+  // Filter reports by selected topic
+  const filteredReports = selectedTopic === 'All'
+    ? reportPlaybooks
+    : reportPlaybooks.filter(rp => Array.isArray(rp?.topic_tags) && rp.topic_tags.includes(selectedTopic))
 
   const filteredContacts = (Array.isArray(playbook?.enriched_contacts) ? playbook.enriched_contacts : []).filter(c => {
     const matchesSearch = !contactFilter || (c.full_name?.toLowerCase().includes(contactFilter.toLowerCase()) || c.company?.toLowerCase().includes(contactFilter.toLowerCase()) || c.job_title?.toLowerCase().includes(contactFilter.toLowerCase()))
@@ -644,10 +919,12 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="font-serif text-2xl tracking-wider">{playbook?.report_title || 'Playbook Results'}</h2>
+          <h2 className="font-serif text-2xl tracking-wider">Playbook Results</h2>
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground tracking-wider">
             <span>{playbook?.playbook_id || ''}</span>
             <span>{playbook?.generation_date ? new Date(playbook.generation_date).toLocaleDateString() : ''}</span>
+            <span className="flex items-center gap-1"><FiFileText size={11} /> {playbook?.total_reports ?? 0} reports</span>
+            <span className="flex items-center gap-1"><FiUsers size={11} /> {playbook?.total_contacts ?? 0} contacts</span>
             <span className={`uppercase px-2 py-0.5 border ${playbook?.pipeline_status === 'completed' ? 'text-green-400 border-green-400/30' : 'text-amber-400 border-amber-400/30'}`}>
               {playbook?.pipeline_status || 'Unknown'}
             </span>
@@ -676,85 +953,52 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
 
       {/* Tab Content */}
       <div className="min-h-[500px]">
-        {/* Tab 0: Report Brief */}
+        {/* Tab 0: Reports & Contributors */}
         {activeTab === 0 && (
           <div className="space-y-6">
-            {/* Executive Summary */}
-            <div className="bg-card border border-border p-6">
-              <h3 className="font-serif text-xs tracking-widest uppercase text-muted-foreground mb-3">Executive Summary</h3>
-              <div className="text-sm leading-relaxed text-foreground/90">
-                {renderMarkdown(playbook?.executive_summary || '')}
-              </div>
+            {/* Topic Filter Bar */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs tracking-widest uppercase text-muted-foreground mr-2 flex items-center gap-1"><FiTag size={11} /> Filter by Topic:</span>
+              <button
+                onClick={() => setSelectedTopic('All')}
+                className={`text-xs tracking-wider px-3 py-1 border transition-colors ${selectedTopic === 'All' ? 'border-primary text-primary bg-primary/10' : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'}`}
+              >
+                All ({reportPlaybooks.length})
+              </button>
+              {allTopicTags.map((tag, i) => {
+                const count = reportPlaybooks.filter(rp => Array.isArray(rp?.topic_tags) && rp.topic_tags.includes(tag)).length
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedTopic(tag)}
+                    className={`text-xs tracking-wider px-3 py-1 border transition-colors ${selectedTopic === tag ? `border-current ${topicTagColor(tag)}` : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'}`}
+                  >
+                    {tag} ({count})
+                  </button>
+                )
+              })}
             </div>
 
-            {/* Key Claims */}
-            <div>
-              <h3 className="font-serif text-xs tracking-widest uppercase text-muted-foreground mb-3">Key Claims</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Array.isArray(playbook?.key_claims) && playbook.key_claims.map((claim, idx) => (
-                  <div key={idx} className="bg-card border border-border p-4 hover:border-primary/20 transition-colors">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <p className="text-sm flex-1">{claim.claim ?? ''}</p>
-                      <span className={`text-xs tracking-wider uppercase px-2 py-0.5 border flex-shrink-0 ${confidenceColor(claim.confidence_score ?? 0)}`}>
-                        {((claim.confidence_score ?? 0) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                      <FiFileText size={10} />
-                      <span>{claim.citation_ref ?? ''}</span>
-                      <span className="text-muted-foreground/30">|</span>
-                      <span>{claim.page_section ?? ''}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {Array.isArray(claim.industry_relevance) && claim.industry_relevance.map((ind, i) => (
-                        <span key={i} className="text-xs uppercase tracking-widest text-primary border border-primary/20 px-2 py-0.5">{ind}</span>
-                      ))}
-                    </div>
-                  </div>
+            {/* Report Cards */}
+            {filteredReports.length > 0 ? (
+              <div className="space-y-6">
+                {filteredReports.map((report, idx) => (
+                  <ReportCard
+                    key={idx}
+                    report={report}
+                    reportIndex={idx}
+                    copiedId={copiedId}
+                    setCopiedId={setCopiedId}
+                  />
                 ))}
               </div>
-            </div>
-
-            {/* Industry Relevance */}
-            <div>
-              <h3 className="font-serif text-xs tracking-widest uppercase text-muted-foreground mb-3">Industry Relevance Map</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Array.isArray(playbook?.industry_relevance_map) && playbook.industry_relevance_map.map((ind, idx) => (
-                  <div key={idx} className="bg-card border border-border p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-serif text-sm tracking-wider">{ind.industry ?? ''}</span>
-                      <span className={`text-xs tracking-wider uppercase px-2 py-0.5 border ${confidenceColor(ind.relevance_score ?? 0)}`}>
-                        {((ind.relevance_score ?? 0) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted h-1 mb-3">
-                      <div className={`h-full ${confidenceBarColor(ind.relevance_score ?? 0)} transition-all duration-500`} style={{ width: `${(ind.relevance_score ?? 0) * 100}%` }} />
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {Array.isArray(ind.key_themes) && ind.key_themes.map((theme, i) => (
-                        <span key={i} className="text-xs text-muted-foreground border border-border px-2 py-0.5">{theme}</span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+            ) : (
+              <div className="bg-card border border-border p-12 text-center">
+                <FiSearch className="mx-auto text-muted-foreground/30 mb-3" size={28} />
+                <p className="text-sm text-muted-foreground">No reports match the selected topic filter</p>
+                <button onClick={() => setSelectedTopic('All')} className="text-xs text-primary mt-2 hover:underline">Show all reports</button>
               </div>
-            </div>
-
-            {/* Signals */}
-            <div>
-              <h3 className="font-serif text-xs tracking-widest uppercase text-muted-foreground mb-3">Market Signals</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {Array.isArray(playbook?.signals) && playbook.signals.map((signal, idx) => (
-                  <div key={idx} className="bg-card border border-border p-4 flex gap-3">
-                    <span className="text-xs uppercase tracking-widest text-primary border border-primary/20 px-2 py-0.5 h-fit flex-shrink-0">{signal.signal_type ?? ''}</span>
-                    <div className="flex-1">
-                      <p className="text-sm">{signal.description ?? ''}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{signal.source_ref ?? ''}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -881,7 +1125,7 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
           </div>
         )}
 
-        {/* Tab 2: Enriched Contacts */}
+        {/* Tab 2: All Contacts */}
         {activeTab === 2 && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 flex-wrap">
@@ -922,10 +1166,11 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Name</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Title</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Company</th>
-                    <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Org Unit</th>
+                    <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Location</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal w-8">Li</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Email</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Confidence</th>
+                    <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Source Reports</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Tags</th>
                   </tr>
                 </thead>
@@ -943,7 +1188,7 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
                       </td>
                       <td className="p-3 text-foreground/70">{contact.job_title ?? ''}</td>
                       <td className="p-3 text-foreground/70">{contact.company ?? ''}</td>
-                      <td className="p-3 text-foreground/70">{contact.org_unit ?? ''}</td>
+                      <td className="p-3 text-foreground/70 text-xs">{contact.location ?? ''}</td>
                       <td className="p-3">
                         {contact.linkedin_url && (
                           <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">
@@ -951,7 +1196,19 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
                           </a>
                         )}
                       </td>
-                      <td className="p-3 text-foreground/70 text-xs">{contact.email ?? ''}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-foreground/70">{contact.email ?? ''}</span>
+                          {contact.email && (
+                            <button
+                              onClick={() => copyToClipboard(contact.email ?? '', setCopiedId, `contact-tab-${idx}`)}
+                              className="text-muted-foreground hover:text-primary transition-colors p-0.5 flex-shrink-0"
+                            >
+                              {copiedId === `contact-tab-${idx}` ? <FiCheck size={11} className="text-green-400" /> : <FiCopy size={11} />}
+                            </button>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-3">
                         <span className={`text-xs uppercase tracking-widest px-2 py-0.5 border ${confidenceColor(contact.confidence ?? 'low')}`}>
                           {contact.confidence ?? 'N/A'}
@@ -959,8 +1216,15 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
                       </td>
                       <td className="p-3">
                         <div className="flex flex-wrap gap-1">
+                          {Array.isArray(contact.source_reports) && contact.source_reports.map((sr, i) => (
+                            <span key={i} className="text-xs border border-border px-1.5 py-0.5 text-muted-foreground">{sr}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-1">
                           {Array.isArray(contact.persona_tags) && contact.persona_tags.map((tag, i) => (
-                            <span key={i} className="text-xs border border-border px-1.5 py-0.5 text-muted-foreground">{tag}</span>
+                            <span key={i} className="text-xs border border-primary/20 px-1.5 py-0.5 text-primary">{tag}</span>
                           ))}
                         </div>
                       </td>
@@ -1052,7 +1316,7 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
       {/* Export Bar */}
       <div className="sticky bottom-0 bg-card border border-border p-4 flex items-center justify-between gap-4 mt-6">
         <div className="text-xs text-muted-foreground tracking-wider">
-          {playbook?.total_contacts ?? 0} contacts | {playbook?.total_emails ?? 0} emails
+          {playbook?.total_reports ?? 0} reports | {playbook?.total_contacts ?? 0} contacts
           {Array.isArray(playbook?.quality_gates?.issues_flagged) && (playbook?.quality_gates?.issues_flagged?.length ?? 0) > 0 && (
             <span className="ml-2 text-amber-400">| {playbook.quality_gates.issues_flagged.length} issue(s) flagged</span>
           )}
@@ -1548,7 +1812,7 @@ export default function Page() {
     }, 10000)
 
     try {
-      const message = `Generate an ABM playbook from the following seed URLs:\n${urls}\n\nFilters:\n- Industry: ${industry}\n- Region: ${region}\n- Persona Focus: ${persona}\n${keywords ? `- Keywords: ${keywords}` : ''}\n\nRun the FULL pipeline in order:\n1. Discover sources matching the seed URLs\n2. Acquire the documents (HTML/PDF)\n3. Parse the content into structured chunks\n4. Summarize reports with grounded claims and citations\n5. Extract target personas and ICPs\n6. CRITICAL — Extract contributors: Search the knowledge base THOROUGHLY for all authors, contributors, and acknowledged individuals. The knowledge base contains these Accenture reports: Technology Vision 2025, Art of AI Maturity, Making Reinvention Real With GenAI, Reinvention in the Age of Generative AI. Query for "Authors", "Contributors", "Acknowledgements", "About the Authors", "Research Team", "Written by", "Special thanks". Extract every REAL human name found (e.g. Paul Daugherty, James Wilson) with their role and org unit. Run multiple search queries to be exhaustive.\n7. Enrich the extracted contributor names via Apollo — resolve into contactable profiles with email, LinkedIn, title\n8. Generate 3-5 persona-specific ABM email variants per enriched contact, grounded in report claims\n\nThe enriched_contacts field MUST contain real people extracted from the actual reports, not fabricated names.`
+      const message = `Generate a per-report ABM intelligence playbook.\n\nSeed URLs:\n${urls}\n\nFilters:\n- Industry: ${industry}\n- Region: ${region}\n- Persona Focus: ${persona}\n${keywords ? `- Keywords: ${keywords}` : ''}\n\nIMPORTANT INSTRUCTIONS:\n1. Read EACH report in the knowledge base individually\n2. For EACH report, produce a summary with key claims, topic tags (AI Transformation, AWS, NVIDIA, Cloud, Technology, Financial Services, Banking, Insurance, GenAI), and industry relevance\n3. For EACH report, extract ALL authors and contributors by searching for "Authors", "Contributors", "Acknowledgements", "About the Authors", "Research Team", "Written by" sections\n4. Enrich EVERY extracted contributor via Apollo to get their email address and LinkedIn URL\n5. Return results in the report_playbooks array where each report has its own contributors list\n6. Also generate personas, ICP summary, and ABM email sequences\n\nThe report_playbooks array MUST have one entry per report, each with its own contributors array containing real people with email and linkedin_url fields.`
 
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
 
@@ -1622,7 +1886,7 @@ export default function Page() {
                     role="switch"
                     aria-checked={showSample}
                   >
-                    <span className={`inline-block h-3.5 w-3.5 transform transition-transform bg-background ${showSample ? 'translate-x-4.5' : 'translate-x-0.5'}`} style={{ transform: showSample ? 'translateX(18px)' : 'translateX(2px)' }} />
+                    <span className={`inline-block h-3.5 w-3.5 transform transition-transform bg-background`} style={{ transform: showSample ? 'translateX(18px)' : 'translateX(2px)' }} />
                   </button>
                 </div>
               </div>
