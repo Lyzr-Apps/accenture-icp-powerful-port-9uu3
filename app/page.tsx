@@ -20,6 +20,7 @@ interface ReportContributor {
   email: string
   linkedin_url: string
   confidence: string
+  extraction_location: string
 }
 
 interface ReportKeyClaim {
@@ -36,6 +37,7 @@ interface ReportIndustryRelevance {
 
 interface ReportPlaybook {
   report_title: string
+  source: string
   executive_summary: string
   key_claims: ReportKeyClaim[]
   topic_tags: string[]
@@ -95,6 +97,11 @@ interface QualityGates {
   dedup_pass: boolean
   confidence_threshold_met: boolean
   issues_flagged: string[]
+  total_reports_processed?: number
+  contributors_found?: number
+  contributors_removed_for_hallucination?: number
+  all_contributors_have_extraction_location?: boolean
+  all_claims_have_citations?: boolean
 }
 
 interface PlaybookData {
@@ -708,17 +715,31 @@ function parseAgentResponse(result: any): PlaybookData | null {
     pipeline_status: data.pipeline_status || 'completed',
     report_playbooks: Array.isArray(data.report_playbooks) ? data.report_playbooks.map((rp: any) => ({
       report_title: rp.report_title || '',
+      source: rp.source || '',
       executive_summary: rp.executive_summary || '',
       key_claims: Array.isArray(rp.key_claims) ? rp.key_claims : [],
       topic_tags: Array.isArray(rp.topic_tags) ? rp.topic_tags : [],
       industry_relevance: Array.isArray(rp.industry_relevance) ? rp.industry_relevance : [],
-      contributors: Array.isArray(rp.contributors) ? rp.contributors : [],
+      contributors: Array.isArray(rp.contributors) ? rp.contributors.map((c: any) => ({
+        ...c,
+        extraction_location: c.extraction_location || c.found_at || '',
+      })) : [],
     })) : [],
     personas: Array.isArray(data.personas) ? data.personas : [],
     icp_summary: data.icp_summary || { industry_segments: [], company_size_bands: [], tech_stack_hints: [], geographic_focus: [] },
     enriched_contacts: Array.isArray(data.enriched_contacts) ? data.enriched_contacts : [],
     email_sequences: Array.isArray(data.email_sequences) ? data.email_sequences : [],
-    quality_gates: data.quality_gates || { groundedness_pass: false, dedup_pass: false, confidence_threshold_met: false, issues_flagged: [] },
+    quality_gates: {
+      groundedness_pass: data.quality_gates?.groundedness_pass ?? false,
+      dedup_pass: data.quality_gates?.dedup_pass ?? false,
+      confidence_threshold_met: data.quality_gates?.confidence_threshold_met ?? false,
+      issues_flagged: Array.isArray(data.quality_gates?.issues_flagged) ? data.quality_gates.issues_flagged : [],
+      total_reports_processed: data.quality_gates?.total_reports_processed,
+      contributors_found: data.quality_gates?.contributors_found,
+      contributors_removed_for_hallucination: data.quality_gates?.contributors_removed_for_hallucination,
+      all_contributors_have_extraction_location: data.quality_gates?.all_contributors_have_extraction_location,
+      all_claims_have_citations: data.quality_gates?.all_claims_have_citations,
+    },
     total_contacts: data.total_contacts || 0,
     total_reports: data.total_reports || 0,
     artifact_files: artifactFiles,
@@ -1632,9 +1653,9 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Name</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Role</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Title / Company</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Source Location</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Email</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal w-8">Li</th>
-                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Conf.</th>
                 </tr>
               </thead>
               <tbody>
@@ -1655,6 +1676,19 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                       <td className="p-2 text-foreground/70">
                         <div className="text-xs">{contrib.job_title ?? ''}</div>
                         <div className="text-xs text-muted-foreground">{contrib.company ?? ''} {contrib.org_unit ? `/ ${contrib.org_unit}` : ''}</div>
+                      </td>
+                      <td className="p-2">
+                        {contrib.extraction_location ? (
+                          <span className="text-xs text-green-400/80 flex items-center gap-1">
+                            <FiCheck size={10} className="flex-shrink-0" />
+                            {contrib.extraction_location}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-amber-400/70 flex items-center gap-1">
+                            <FiAlertTriangle size={10} className="flex-shrink-0" />
+                            Unverified
+                          </span>
+                        )}
                       </td>
                       <td className="p-2">
                         <div className="flex items-center gap-1">
@@ -1682,11 +1716,6 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                           <span className="text-xs text-muted-foreground">--</span>
                         )}
                       </td>
-                      <td className="p-2">
-                        <span className={`text-xs uppercase tracking-widest px-1.5 py-0.5 border ${confidenceColor(contrib.confidence ?? 'low')}`}>
-                          {contrib.confidence ?? 'N/A'}
-                        </span>
-                      </td>
                     </tr>
                   )
                 })}
@@ -1695,7 +1724,10 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
           </div>
         )}
         {contributorsExpanded && contributors.length === 0 && (
-          <div className="text-xs text-muted-foreground pl-5">No contributors extracted for this report</div>
+          <div className="text-xs text-muted-foreground pl-5 flex items-center gap-2">
+            <FiShield size={12} className="text-green-400/70" />
+            No individually credited authors found in this document. This is accurate — the report does not name specific contributors.
+          </div>
         )}
       </div>
     </div>
@@ -1848,6 +1880,19 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
             {playbook?.quality_gates?.groundedness_pass && <span className="flex items-center gap-1 text-xs text-green-400"><FiShield size={12} /> Grounded</span>}
             {playbook?.quality_gates?.dedup_pass && <span className="flex items-center gap-1 text-xs text-green-400"><FiCheck size={12} /> Deduped</span>}
             {playbook?.quality_gates?.confidence_threshold_met && <span className="flex items-center gap-1 text-xs text-green-400"><FiActivity size={12} /> Confidence Met</span>}
+            {typeof playbook?.quality_gates?.contributors_found === 'number' && (
+              <span className="flex items-center gap-1 text-xs text-foreground/70">
+                <FiUsers size={12} /> {playbook.quality_gates.contributors_found} verified
+              </span>
+            )}
+            {typeof playbook?.quality_gates?.contributors_removed_for_hallucination === 'number' && playbook.quality_gates.contributors_removed_for_hallucination > 0 && (
+              <span className="flex items-center gap-1 text-xs text-amber-400">
+                <FiAlertTriangle size={12} /> {playbook.quality_gates.contributors_removed_for_hallucination} removed (unverified)
+              </span>
+            )}
+            {playbook?.quality_gates?.all_contributors_have_extraction_location === true && (
+              <span className="flex items-center gap-1 text-xs text-green-400"><FiShield size={12} /> All sourced</span>
+            )}
           </div>
           <button
             onClick={onDeletePlaybook}
@@ -3360,19 +3405,22 @@ export default function Page() {
 ${sourceContext}
 Filters: Industry=${industry}, Region=${region}, Persona=${persona}${keywords ? `, Keywords=${keywords}` : ''}
 
-CRITICAL INSTRUCTIONS FOR CONTRIBUTOR EXTRACTION:
-- Extract ONLY real people who are explicitly named in each report as authors, co-authors, editors, contributors, research leads, or cited experts.
-- DO NOT invent, guess, or hallucinate contributor names. Every contributor MUST be traceable to a specific mention in the report text.
-- For each contributor, record the exact page or section where their name appears.
-- If a report does not name any contributors, return an empty contributors array for that report rather than guessing.
-- Include ALL contributors mentioned — not just the lead author. Look for acknowledgments sections, contributor pages, research team credits, editorial teams, and cited experts within the report body.
+ABSOLUTE ZERO-HALLUCINATION POLICY (ENFORCED):
+1. CONTRIBUTOR NAMES: Extract ONLY names that are LITERALLY PRINTED in each document as authors, co-authors, editors, or credited contributors. Look in: title pages, "Authors" sections, "Contributors" sections, "Acknowledgments", "About the Authors", and "Research Team" credits. For each contributor you include, you MUST provide extraction_location (the exact page/section where the name appears). If a document does not explicitly credit any individual authors, return an EMPTY contributors array for that report — this is the CORRECT answer. NEVER guess, infer, or fabricate contributor names. A fabricated name is a critical failure.
+2. STATISTICS: Every percentage, dollar figure, or numerical claim must come from the document text. Do NOT generate statistics. If you cannot cite the exact page/section for a statistic, do not include it.
+3. KEY CLAIMS: Every claim must have citation_ref and page_section pointing to where it appears in the source document.
 
-CRITICAL INSTRUCTIONS FOR EXECUTIVE SUMMARIES:
-- Read the ENTIRE document thoroughly, not just the first few pages.
-- Provide deeply insightful executive summaries that capture the full scope of each report's findings, methodology, key data points, frameworks, and strategic recommendations.
-- Executive summaries should be 3-5 paragraphs covering: core thesis, key findings with data, methodology/framework used, strategic implications, and actionable takeaways.
+EXECUTIVE SUMMARY INSTRUCTIONS:
+- Read the ENTIRE document, not just the first few pages.
+- 3-5 paragraphs: core thesis, key findings with EXACT data from the document, methodology/framework, strategic implications, actionable takeaways.
+- Every data point in the summary must actually appear in the document.
 
-Return the complete JSON with report_playbooks (one per report), personas, icp_summary, enriched_contacts, email_sequences, and quality_gates. Process as many reports as possible. A partial result with real data is required — never return text explanations.`
+QUALITY GATES (include in output):
+- contributors_found: count of verified contributors (those with extraction_location)
+- contributors_removed_for_hallucination: count of names removed because they lacked source verification
+- all_contributors_have_extraction_location: true/false
+
+Return complete JSON: report_playbooks (one per report), personas, icp_summary, enriched_contacts, email_sequences, quality_gates. Process all reports. Partial results with verified data preferred over complete results with fabricated data. Never return text explanations.`
 
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
 
