@@ -221,9 +221,9 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Banking', relevance_score: 0.78 },
       ],
       contributors: [
-        { full_name: 'Paul Daugherty', report_role: 'Lead Author', org_unit: 'Accenture Research', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', email: 'paul.daugherty@accenture.com', linkedin_url: 'https://linkedin.com/in/pauldaugherty', confidence: 'high' },
-        { full_name: 'Marc Carrel-Billiard', report_role: 'Contributing Author', org_unit: 'Accenture Technology Innovation', job_title: 'Global Technology Innovation Lead', company: 'Accenture', email: 'marc.carrel-billiard@accenture.com', linkedin_url: 'https://linkedin.com/in/marccb', confidence: 'high' },
-        { full_name: 'Michael Biltz', report_role: 'Lead Researcher', org_unit: 'Accenture Research', job_title: 'Managing Director - Technology Vision', company: 'Accenture', email: 'michael.biltz@accenture.com', linkedin_url: 'https://linkedin.com/in/michaelbiltz', confidence: 'medium' },
+        { full_name: 'Paul Daugherty', report_role: 'Lead Author', org_unit: 'Accenture Research', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', email: 'paul.daugherty@accenture.com', linkedin_url: 'https://linkedin.com/in/pauldaugherty', confidence: 'high', extraction_location: 'Front cover and About the Authors, p.2', enrichment_status: 'enriched' },
+        { full_name: 'Marc Carrel-Billiard', report_role: 'Contributing Author', org_unit: 'Accenture Technology Innovation', job_title: 'Global Technology Innovation Lead', company: 'Accenture', email: 'marc.carrel-billiard@accenture.com', linkedin_url: 'https://linkedin.com/in/marccb', confidence: 'high', extraction_location: 'About the Authors, p.2', enrichment_status: 'enriched' },
+        { full_name: 'Michael Biltz', report_role: 'Lead Researcher', org_unit: 'Accenture Research', job_title: 'Managing Director - Technology Vision', company: 'Accenture', email: 'michael.biltz@accenture.com', linkedin_url: 'https://linkedin.com/in/michaelbiltz', confidence: 'medium', extraction_location: 'Acknowledgments, p.48', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -241,8 +241,8 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Financial Services', relevance_score: 0.91 },
       ],
       contributors: [
-        { full_name: 'Lan Guan', report_role: 'Lead Author', org_unit: 'Accenture AI', job_title: 'Chief AI Officer', company: 'Accenture', email: 'lan.guan@accenture.com', linkedin_url: 'https://linkedin.com/in/languanai', confidence: 'high' },
-        { full_name: 'Sanjeev Vohra', report_role: 'Contributing Author', org_unit: 'Accenture Technology', job_title: 'Group Technology Officer - Technology', company: 'Accenture', email: 'sanjeev.vohra@accenture.com', linkedin_url: 'https://linkedin.com/in/sanjeevvohra', confidence: 'high' },
+        { full_name: 'Lan Guan', report_role: 'Lead Author', org_unit: 'Accenture AI', job_title: 'Chief AI Officer', company: 'Accenture', email: 'lan.guan@accenture.com', linkedin_url: 'https://linkedin.com/in/languanai', confidence: 'high', extraction_location: 'Cover page and Author Bios, p.3', enrichment_status: 'enriched' },
+        { full_name: 'Sanjeev Vohra', report_role: 'Contributing Author', org_unit: 'Accenture Technology', job_title: 'Group Technology Officer - Technology', company: 'Accenture', email: 'sanjeev.vohra@accenture.com', linkedin_url: 'https://linkedin.com/in/sanjeevvohra', confidence: 'high', extraction_location: 'Author Bios, p.3', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -259,9 +259,9 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Financial Services', relevance_score: 0.94 },
       ],
       contributors: [
-        { full_name: 'Julie Sweet', report_role: 'Executive Sponsor', org_unit: 'Accenture Executive Office', job_title: 'Chair & Chief Executive Officer', company: 'Accenture', email: 'julie.sweet@accenture.com', linkedin_url: 'https://linkedin.com/in/juliesweet', confidence: 'high' },
-        { full_name: 'Jack Azagury', report_role: 'Contributing Author', org_unit: 'Accenture Strategy & Consulting', job_title: 'Group Chief Executive - Strategy & Consulting', company: 'Accenture', email: 'jack.azagury@accenture.com', linkedin_url: 'https://linkedin.com/in/jackazagury', confidence: 'medium' },
-        { full_name: 'Karthik Narain', report_role: 'Contributing Author', org_unit: 'Accenture Technology', job_title: 'Group Chief Executive - Technology', company: 'Accenture', email: 'karthik.narain@accenture.com', linkedin_url: 'https://linkedin.com/in/karthiknarain', confidence: 'high' },
+        { full_name: 'Julie Sweet', report_role: 'Executive Sponsor', org_unit: 'Accenture Executive Office', job_title: 'Chair & Chief Executive Officer', company: 'Accenture', email: 'julie.sweet@accenture.com', linkedin_url: 'https://linkedin.com/in/juliesweet', confidence: 'high', extraction_location: 'Foreword, p.1', enrichment_status: 'enriched' },
+        { full_name: 'Jack Azagury', report_role: 'Contributing Author', org_unit: 'Accenture Strategy & Consulting', job_title: 'Group Chief Executive - Strategy & Consulting', company: 'Accenture', email: 'jack.azagury@accenture.com', linkedin_url: 'https://linkedin.com/in/jackazagury', confidence: 'medium', extraction_location: 'Contributors, p.44', enrichment_status: 'enriched' },
+        { full_name: 'Karthik Narain', report_role: 'Contributing Author', org_unit: 'Accenture Technology', job_title: 'Group Chief Executive - Technology', company: 'Accenture', email: 'karthik.narain@accenture.com', linkedin_url: 'https://linkedin.com/in/karthiknarain', confidence: 'high', extraction_location: 'Contributors, p.44', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -278,8 +278,8 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Insurance', relevance_score: 0.82 },
       ],
       contributors: [
-        { full_name: 'Paul Daugherty', report_role: 'Lead Author', org_unit: 'Accenture Research', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', email: 'paul.daugherty@accenture.com', linkedin_url: 'https://linkedin.com/in/pauldaugherty', confidence: 'high' },
-        { full_name: 'Jim Wilson', report_role: 'Contributing Author', org_unit: 'Accenture Research', job_title: 'Global Managing Director - Thought Leadership & Research', company: 'Accenture', email: 'james.wilson@accenture.com', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', confidence: 'high' },
+        { full_name: 'Paul Daugherty', report_role: 'Lead Author', org_unit: 'Accenture Research', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', email: 'paul.daugherty@accenture.com', linkedin_url: 'https://linkedin.com/in/pauldaugherty', confidence: 'high', extraction_location: 'Cover page and About the Authors, p.2', enrichment_status: 'enriched' },
+        { full_name: 'Jim Wilson', report_role: 'Contributing Author', org_unit: 'Accenture Research', job_title: 'Global Managing Director - Thought Leadership & Research', company: 'Accenture', email: 'james.wilson@accenture.com', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', confidence: 'high', extraction_location: 'About the Authors, p.2', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -296,7 +296,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Healthcare', relevance_score: 0.75 },
       ],
       contributors: [
-        { full_name: 'Mark Knickrehm', report_role: 'Lead Author', org_unit: 'Accenture Strategy', job_title: 'Group Chief Executive - Strategy', company: 'Accenture', email: 'mark.knickrehm@accenture.com', linkedin_url: 'https://linkedin.com/in/markknickrehm', confidence: 'high' },
+        { full_name: 'Mark Knickrehm', report_role: 'Lead Author', org_unit: 'Accenture Strategy', job_title: 'Group Chief Executive - Strategy', company: 'Accenture', email: 'mark.knickrehm@accenture.com', linkedin_url: 'https://linkedin.com/in/markknickrehm', confidence: 'high', extraction_location: 'Cover page and Author Bio, p.1', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -312,7 +312,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Life Sciences', relevance_score: 0.93 },
       ],
       contributors: [
-        { full_name: 'Kaveh Safavi', report_role: 'Lead Author', org_unit: 'Accenture Health', job_title: 'Senior Managing Director - Health Industry', company: 'Accenture', email: 'kaveh.safavi@accenture.com', linkedin_url: 'https://linkedin.com/in/kavehsafavi', confidence: 'high' },
+        { full_name: 'Kaveh Safavi', report_role: 'Lead Author', org_unit: 'Accenture Health', job_title: 'Senior Managing Director - Health Industry', company: 'Accenture', email: 'kaveh.safavi@accenture.com', linkedin_url: 'https://linkedin.com/in/kavehsafavi', confidence: 'high', extraction_location: 'Article byline, paragraph 1', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -329,7 +329,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Healthcare', relevance_score: 0.88 },
       ],
       contributors: [
-        { full_name: 'Paolo Dal Cin', report_role: 'Lead Author', org_unit: 'Accenture Security', job_title: 'Global Lead - Accenture Security', company: 'Accenture', email: 'paolo.dal.cin@accenture.com', linkedin_url: 'https://linkedin.com/in/paolodalcin', confidence: 'high' },
+        { full_name: 'Paolo Dal Cin', report_role: 'Lead Author', org_unit: 'Accenture Security', job_title: 'Global Lead - Accenture Security', company: 'Accenture', email: 'paolo.dal.cin@accenture.com', linkedin_url: 'https://linkedin.com/in/paolodalcin', confidence: 'high', extraction_location: 'Press release attribution, paragraph 1', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -346,7 +346,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Technology', relevance_score: 0.80 },
       ],
       contributors: [
-        { full_name: 'Peter Lacy', report_role: 'Lead Author', org_unit: 'Accenture Sustainability Services', job_title: 'Global Sustainability Services Lead', company: 'Accenture', email: 'peter.lacy@accenture.com', linkedin_url: 'https://linkedin.com/in/peterlacy', confidence: 'high' },
+        { full_name: 'Peter Lacy', report_role: 'Lead Author', org_unit: 'Accenture Sustainability Services', job_title: 'Global Sustainability Services Lead', company: 'Accenture', email: 'peter.lacy@accenture.com', linkedin_url: 'https://linkedin.com/in/peterlacy', confidence: 'high', extraction_location: 'Cover page and About the Author, p.2', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -363,7 +363,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Healthcare', relevance_score: 0.78 },
       ],
       contributors: [
-        { full_name: 'Ellyn Shook', report_role: 'Lead Author', org_unit: 'Accenture Leadership & Culture', job_title: 'Chief Leadership & Human Resources Officer', company: 'Accenture', email: 'ellyn.shook@accenture.com', linkedin_url: 'https://linkedin.com/in/ellynshook', confidence: 'high' },
+        { full_name: 'Ellyn Shook', report_role: 'Lead Author', org_unit: 'Accenture Leadership & Culture', job_title: 'Chief Leadership & Human Resources Officer', company: 'Accenture', email: 'ellyn.shook@accenture.com', linkedin_url: 'https://linkedin.com/in/ellynshook', confidence: 'high', extraction_location: 'Article byline, paragraph 1', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -379,7 +379,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Financial Services', relevance_score: 0.85 },
       ],
       contributors: [
-        { full_name: 'Kenneth Saldanha', report_role: 'Lead Author', org_unit: 'Accenture Insurance', job_title: 'Global Insurance Industry Lead', company: 'Accenture', email: 'kenneth.saldanha@accenture.com', linkedin_url: 'https://linkedin.com/in/kennethsaldanha', confidence: 'high' },
+        { full_name: 'Kenneth Saldanha', report_role: 'Lead Author', org_unit: 'Accenture Insurance', job_title: 'Global Insurance Industry Lead', company: 'Accenture', email: 'kenneth.saldanha@accenture.com', linkedin_url: 'https://linkedin.com/in/kennethsaldanha', confidence: 'high', extraction_location: 'Blog post byline, paragraph 1', enrichment_status: 'enriched' },
       ],
     },
     {
@@ -396,7 +396,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { industry: 'Payments', relevance_score: 0.92 },
       ],
       contributors: [
-        { full_name: 'Michael Abbott', report_role: 'Lead Author', org_unit: 'Accenture Banking', job_title: 'Senior Managing Director - Global Banking Lead', company: 'Accenture', email: 'michael.abbott@accenture.com', linkedin_url: 'https://linkedin.com/in/michaelabbott', confidence: 'high' },
+        { full_name: 'Michael Abbott', report_role: 'Lead Author', org_unit: 'Accenture Banking', job_title: 'Senior Managing Director - Global Banking Lead', company: 'Accenture', email: 'michael.abbott@accenture.com', linkedin_url: 'https://linkedin.com/in/michaelabbott', confidence: 'high', extraction_location: 'Report cover and About the Author, p.3', enrichment_status: 'enriched' },
       ],
     },
   ],
@@ -411,18 +411,18 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
     geographic_focus: ['North America', 'Western Europe', 'APAC'],
   },
   enriched_contacts: [
-    { full_name: 'Paul Daugherty', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', org_unit: 'Accenture Research', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/pauldaugherty', email: 'paul.daugherty@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025', 'Reinvention in the Age of GenAI'], persona_tags: ['CTO', 'C-Suite'] },
-    { full_name: 'Lan Guan', job_title: 'Chief AI Officer', company: 'Accenture', org_unit: 'Accenture AI', location: 'San Francisco, CA', linkedin_url: 'https://linkedin.com/in/languanai', email: 'lan.guan@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Art of AI Maturity'], persona_tags: ['CAIO', 'C-Suite'] },
-    { full_name: 'Julie Sweet', job_title: 'Chair & CEO', company: 'Accenture', org_unit: 'Executive Office', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/juliesweet', email: 'julie.sweet@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Making Reinvention Real'], persona_tags: ['CEO', 'C-Suite'] },
-    { full_name: 'Marc Carrel-Billiard', job_title: 'Global Technology Innovation Lead', company: 'Accenture', org_unit: 'Technology Innovation', location: 'Paris, France', linkedin_url: 'https://linkedin.com/in/marccb', email: 'marc.carrel-billiard@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025'], persona_tags: ['Innovation', 'VP/Director'] },
-    { full_name: 'Jim Wilson', job_title: 'Global MD - Thought Leadership', company: 'Accenture', org_unit: 'Accenture Research', location: 'Boston, MA', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', email: 'james.wilson@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Reinvention in the Age of GenAI'], persona_tags: ['Research', 'VP/Director'] },
-    { full_name: 'Kaveh Safavi', job_title: 'Senior Managing Director - Health Industry', company: 'Accenture', org_unit: 'Accenture Health', location: 'Washington, DC', linkedin_url: 'https://linkedin.com/in/kavehsafavi', email: 'kaveh.safavi@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Trends 2025 in Healthcare'], persona_tags: ['Healthcare', 'C-Suite'] },
-    { full_name: 'Paolo Dal Cin', job_title: 'Global Lead - Accenture Security', company: 'Accenture', org_unit: 'Accenture Security', location: 'Milan, Italy', linkedin_url: 'https://linkedin.com/in/paolodalcin', email: 'paolo.dal.cin@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Cybersecurity: AI-Augmented Cyber Threats'], persona_tags: ['CISO', 'Security'] },
-    { full_name: 'Peter Lacy', job_title: 'Global Sustainability Services Lead', company: 'Accenture', org_unit: 'Accenture Sustainability Services', location: 'London, UK', linkedin_url: 'https://linkedin.com/in/peterlacy', email: 'peter.lacy@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Destination Net Zero'], persona_tags: ['Sustainability', 'VP/Director'] },
-    { full_name: 'Ellyn Shook', job_title: 'Chief Leadership & Human Resources Officer', company: 'Accenture', org_unit: 'Accenture Leadership & Culture', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/ellynshook', email: 'ellyn.shook@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Gen AI and Talent Transformation'], persona_tags: ['CHRO', 'C-Suite'] },
-    { full_name: 'Kenneth Saldanha', job_title: 'Global Insurance Industry Lead', company: 'Accenture', org_unit: 'Accenture Insurance', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/kennethsaldanha', email: 'kenneth.saldanha@accenture.com', confidence: 'high', needs_review: false, source_reports: ['5 Predictions for Insurance Industry 2026'], persona_tags: ['Insurance', 'VP/Director'] },
-    { full_name: 'Michael Abbott', job_title: 'Senior Managing Director - Global Banking Lead', company: 'Accenture', org_unit: 'Accenture Banking', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/michaelabbott', email: 'michael.abbott@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Top 10 Trends in Banking 2024'], persona_tags: ['Banking', 'VP/Director'] },
-    { full_name: 'Mark Knickrehm', job_title: 'Group Chief Executive - Strategy', company: 'Accenture', org_unit: 'Accenture Strategy', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/markknickrehm', email: 'mark.knickrehm@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Macro Foresight 2026: Top 10 Trends'], persona_tags: ['Strategy', 'C-Suite'] },
+    { full_name: 'Paul Daugherty', job_title: 'Group Chief Executive - Technology & CTO', company: 'Accenture', org_unit: 'Accenture Research', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/pauldaugherty', email: 'paul.daugherty@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025', 'Reinvention in the Age of GenAI'], persona_tags: ['CTO', 'C-Suite'], enrichment_status: 'enriched', confidence_score: 0.95 },
+    { full_name: 'Lan Guan', job_title: 'Chief AI Officer', company: 'Accenture', org_unit: 'Accenture AI', location: 'San Francisco, CA', linkedin_url: 'https://linkedin.com/in/languanai', email: 'lan.guan@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Art of AI Maturity'], persona_tags: ['CAIO', 'C-Suite'], enrichment_status: 'enriched', confidence_score: 0.93 },
+    { full_name: 'Julie Sweet', job_title: 'Chair & CEO', company: 'Accenture', org_unit: 'Executive Office', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/juliesweet', email: 'julie.sweet@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Making Reinvention Real'], persona_tags: ['CEO', 'C-Suite'], enrichment_status: 'enriched', confidence_score: 0.97 },
+    { full_name: 'Marc Carrel-Billiard', job_title: 'Global Technology Innovation Lead', company: 'Accenture', org_unit: 'Technology Innovation', location: 'Paris, France', linkedin_url: 'https://linkedin.com/in/marccb', email: 'marc.carrel-billiard@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025'], persona_tags: ['Innovation', 'VP/Director'], enrichment_status: 'enriched', confidence_score: 0.91 },
+    { full_name: 'Jim Wilson', job_title: 'Global MD - Thought Leadership', company: 'Accenture', org_unit: 'Accenture Research', location: 'Boston, MA', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', email: 'james.wilson@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Reinvention in the Age of GenAI'], persona_tags: ['Research', 'VP/Director'], enrichment_status: 'enriched', confidence_score: 0.90 },
+    { full_name: 'Kaveh Safavi', job_title: 'Senior Managing Director - Health Industry', company: 'Accenture', org_unit: 'Accenture Health', location: 'Washington, DC', linkedin_url: 'https://linkedin.com/in/kavehsafavi', email: 'kaveh.safavi@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Trends 2025 in Healthcare'], persona_tags: ['Healthcare', 'C-Suite'], enrichment_status: 'enriched', confidence_score: 0.92 },
+    { full_name: 'Paolo Dal Cin', job_title: 'Global Lead - Accenture Security', company: 'Accenture', org_unit: 'Accenture Security', location: 'Milan, Italy', linkedin_url: 'https://linkedin.com/in/paolodalcin', email: 'paolo.dal.cin@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Cybersecurity: AI-Augmented Cyber Threats'], persona_tags: ['CISO', 'Security'], enrichment_status: 'enriched', confidence_score: 0.94 },
+    { full_name: 'Peter Lacy', job_title: 'Global Sustainability Services Lead', company: 'Accenture', org_unit: 'Accenture Sustainability Services', location: 'London, UK', linkedin_url: 'https://linkedin.com/in/peterlacy', email: 'peter.lacy@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Destination Net Zero'], persona_tags: ['Sustainability', 'VP/Director'], enrichment_status: 'enriched', confidence_score: 0.89 },
+    { full_name: 'Ellyn Shook', job_title: 'Chief Leadership & Human Resources Officer', company: 'Accenture', org_unit: 'Accenture Leadership & Culture', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/ellynshook', email: 'ellyn.shook@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Gen AI and Talent Transformation'], persona_tags: ['CHRO', 'C-Suite'], enrichment_status: 'enriched', confidence_score: 0.93 },
+    { full_name: 'Kenneth Saldanha', job_title: 'Global Insurance Industry Lead', company: 'Accenture', org_unit: 'Accenture Insurance', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/kennethsaldanha', email: 'kenneth.saldanha@accenture.com', confidence: 'high', needs_review: false, source_reports: ['5 Predictions for Insurance Industry 2026'], persona_tags: ['Insurance', 'VP/Director'], enrichment_status: 'enriched', confidence_score: 0.91 },
+    { full_name: 'Michael Abbott', job_title: 'Senior Managing Director - Global Banking Lead', company: 'Accenture', org_unit: 'Accenture Banking', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/michaelabbott', email: 'michael.abbott@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Top 10 Trends in Banking 2024'], persona_tags: ['Banking', 'VP/Director'], enrichment_status: 'enriched', confidence_score: 0.92 },
+    { full_name: 'Mark Knickrehm', job_title: 'Group Chief Executive - Strategy', company: 'Accenture', org_unit: 'Accenture Strategy', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/markknickrehm', email: 'mark.knickrehm@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Macro Foresight 2026: Top 10 Trends'], persona_tags: ['Strategy', 'C-Suite'], enrichment_status: 'enriched', confidence_score: 0.90 },
   ],
   email_sequences: [
     {
@@ -452,7 +452,7 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
       ],
     },
   ],
-  quality_gates: { groundedness_pass: true, dedup_pass: true, confidence_threshold_met: true, issues_flagged: [] },
+  quality_gates: { groundedness_pass: true, dedup_pass: true, confidence_threshold_met: true, issues_flagged: [], total_reports_processed: 12, contributors_found: 16, contributors_removed_for_hallucination: 0, all_contributors_have_extraction_location: true, all_claims_have_citations: true, enrichment_success_rate: 100 },
   total_contacts: 12,
   total_reports: 12,
 }
@@ -807,6 +807,69 @@ function confidenceColor(c: string | number): string {
   if (s === 'high') return 'text-green-400 border-green-400/30 bg-green-400/10'
   if (s === 'medium') return 'text-amber-400 border-amber-400/30 bg-amber-400/10'
   return 'text-red-400 border-red-400/30 bg-red-400/10'
+}
+
+// ─── Contributor Validation ──────────────────────────────────────────────────
+// Client-side post-processing: flag contributors that lack verification evidence
+function validateContributors(playbook: PlaybookData): PlaybookData {
+  if (!playbook || !Array.isArray(playbook.report_playbooks)) return playbook
+
+  let totalFlagged = 0
+  let totalContributors = 0
+
+  const validatedPlaybooks = playbook.report_playbooks.map(rp => {
+    if (!Array.isArray(rp.contributors)) return rp
+
+    const validatedContributors = rp.contributors.map(c => {
+      totalContributors++
+      const hasLocation = !!(c.extraction_location && c.extraction_location.trim().length > 0)
+      // Flag as unverified if no extraction_location provided
+      if (!hasLocation) {
+        totalFlagged++
+        return {
+          ...c,
+          confidence: 'low',
+          extraction_location: '',
+        }
+      }
+      return c
+    })
+
+    return { ...rp, contributors: validatedContributors }
+  })
+
+  // Also validate enriched_contacts — strip any that don't appear in report contributors
+  const allReportNames = new Set<string>()
+  validatedPlaybooks.forEach(rp => {
+    if (Array.isArray(rp.contributors)) {
+      rp.contributors.forEach(c => {
+        if (c.full_name) allReportNames.add(c.full_name.toLowerCase().trim())
+      })
+    }
+  })
+
+  const validatedContacts = Array.isArray(playbook.enriched_contacts)
+    ? playbook.enriched_contacts.filter(c => {
+        // Keep contacts whose names appear in at least one report's contributors
+        if (!c.full_name) return false
+        return allReportNames.has(c.full_name.toLowerCase().trim())
+      })
+    : []
+
+  // Update quality gates with validation results
+  const updatedGates = {
+    ...playbook.quality_gates,
+    contributors_found: totalContributors,
+    all_contributors_have_extraction_location: totalFlagged === 0,
+  }
+
+  return {
+    ...playbook,
+    report_playbooks: validatedPlaybooks,
+    enriched_contacts: validatedContacts,
+    quality_gates: updatedGates,
+    total_contacts: validatedContacts.length,
+  }
 }
 
 function enrichmentStatusStyle(status: string): { text: string; classes: string } {
@@ -1662,7 +1725,26 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
           <span className="text-xs tracking-wider px-1.5 py-0.5 bg-primary/15 text-primary border border-primary/20 normal-case">{contributors.length}</span>
         </button>
         {contributorsExpanded && contributors.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="space-y-2">
+            {/* Verification status banner */}
+            {(() => {
+              const unverified = contributors.filter(c => !c.extraction_location || !c.extraction_location.trim()).length
+              if (unverified > 0) {
+                return (
+                  <div className="flex items-center gap-2 px-3 py-2 border border-amber-400/30 bg-amber-400/5 text-xs text-amber-400">
+                    <FiAlertTriangle size={12} className="flex-shrink-0" />
+                    <span>{unverified} of {contributors.length} contributor{contributors.length !== 1 ? 's' : ''} could not be verified in the document text. Unverified names may be hallucinated by the AI and should be manually confirmed.</span>
+                  </div>
+                )
+              }
+              return (
+                <div className="flex items-center gap-2 px-3 py-2 border border-green-400/30 bg-green-400/5 text-xs text-green-400">
+                  <FiShield size={12} className="flex-shrink-0" />
+                  <span>All {contributors.length} contributor{contributors.length !== 1 ? 's' : ''} verified with document source locations.</span>
+                </div>
+              )
+            })()}
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
@@ -1680,7 +1762,7 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                   const emailCopyId = `report-${reportIndex}-contrib-${cIdx}`
                   const contribKnown = isKnownContact({ full_name: contrib.full_name, email: contrib.email }, kc)
                   return (
-                    <tr key={cIdx} className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${contribKnown ? 'bg-primary/5' : ''}`}>
+                    <tr key={cIdx} className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${contribKnown ? 'bg-primary/5' : !contrib.extraction_location?.trim() ? 'bg-red-400/5 border-l-2 border-l-red-400/40' : ''}`}>
                       <td className="p-2">
                         <div className="flex items-center gap-1.5">
                           {contribKnown && <FiFlag size={11} className="text-primary flex-shrink-0" title={`Known prospect: ${contribKnown.status}`} />}
@@ -1748,6 +1830,7 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         {contributorsExpanded && contributors.length === 0 && (
@@ -3465,38 +3548,49 @@ export default function Page() {
 ${sourceContext}
 Filters: Industry=${industry}, Region=${region}, Persona=${persona}${keywords ? `, Keywords=${keywords}` : ''}
 
-CONTRIBUTOR EXTRACTION (CRITICAL — SEARCH THE ENTIRE DOCUMENT):
-Extract ONLY names LITERALLY PRINTED in each document. But search THOROUGHLY — do NOT only check "Authors" sections. Many reports list authors under different headings. You MUST search ALL of these locations in every document:
-1. Cover page / title page bylines
-2. "Authors" or "Written by" sections
-3. "CONTACT US" or "CONTACTS" sections — MANY Accenture reports list authors here with name + title + email
-4. "For More Information" sections
-5. "About the Authors" / "About the Team" sections
-6. "Acknowledgments" sections
-7. "Research Team" / "Editorial Team" / "Project Team" credits
-8. BACK COVER or FINAL PAGE — often has author credits
-9. "Key Contacts" sections
-10. Executive foreword/letter signatures
-11. Any section with names + job titles together
-12. Sidebar author bios or profile boxes
+=== ABSOLUTE ANTI-HALLUCINATION RULES (THIS OVERRIDES EVERYTHING) ===
 
-For each contributor: provide extraction_location (exact page/section where found), full_name, report_role, job_title, company, org_unit, and any email printed in the document.
+YOU MUST NOT USE YOUR TRAINING DATA OR GENERAL KNOWLEDGE ABOUT ANY COMPANY, PERSON, OR ORGANIZATION.
 
-NEVER fabricate names. But also NEVER miss names that are actually in the document. Search the last 3 pages of every report.
+For contributor extraction: you may ONLY return a person's name if that EXACT name appears as VISIBLE TEXT in the document you are processing. If you "know" someone works at Accenture from your training data but their name is NOT printed in THIS specific document, you MUST NOT include them.
 
-ENRICHMENT: After extracting verified contributors, enrich each with work email and LinkedIn profile via Apollo. If Apollo doesn't have data, leave fields empty — never fabricate emails or LinkedIn URLs. Include enrichment_status for each contact.
+WHAT COUNTS AS "IN THE DOCUMENT":
+- The name must appear as literal text in the PDF/document content
+- It must be in a context that identifies them as an author, contributor, contact, or team member
+- Examples: "Written by John Smith", "Contact: Jane Doe, Managing Director", "Author: Bob Jones"
 
-ZERO-HALLUCINATION RULES:
-- Every contributor name must be literally printed in the document with extraction_location
-- Every statistic must come from the document with page/section citation
-- Every key claim must have citation_ref and page_section
-- Never fabricate contact details — use Apollo data or leave empty
+WHAT DOES NOT COUNT:
+- Names you know from your training data about the company
+- Names from OTHER documents or reports (only use names from the SPECIFIC document being processed)
+- Names you are guessing or inferring
+- Executive names you associate with the company brand
 
-EXECUTIVE SUMMARIES: Read the ENTIRE document. 3-5 paragraphs: core thesis, key findings with exact data, methodology, strategic implications, actionable takeaways.
+For EACH contributor you include, you MUST provide extraction_location with the EXACT page number and section heading where the name appears (e.g., "Page 24, Contact Us section" or "Back cover, Key Contacts"). If you cannot provide a specific page/section, DO NOT include that person.
 
-QUALITY GATES (include in output): total_reports_processed, contributors_found (verified), contributors_removed_for_hallucination, all_contributors_have_extraction_location, enrichment_success_rate.
+SEARCH LOCATIONS (search all of these in each document):
+- Cover page / title page bylines
+- "Authors" or "Written by" sections
+- "CONTACT US" or "CONTACTS" sections (common in Accenture reports)
+- "For More Information" sections
+- "About the Authors" / "About the Team" sections
+- Back cover or final page credits
+- "Key Contacts" sections
+- Executive foreword/letter signatures
+- Sidebar author bios or profile boxes
+- "Acknowledgments" or "Research Team" credits
 
-Return complete JSON: report_playbooks, personas, icp_summary, enriched_contacts, email_sequences, quality_gates. Never return text explanations.`
+CONTRIBUTOR FIELDS: full_name, report_role, job_title (as printed in document), company, org_unit, extraction_location (REQUIRED - exact page and section), email (only if printed in document), linkedin_url (leave empty), enrichment_status ("pending").
+
+SELF-CHECK BEFORE RETURNING: For every name in your contributors array, ask yourself: "Can I point to the exact page and section in THIS document where this name appears?" If the answer is no, REMOVE that person immediately.
+
+ENRICHMENT: After extraction, enrich each verified contributor with work email and LinkedIn profile via Apollo tools. If Apollo returns no data, leave fields empty. Never fabricate emails or LinkedIn URLs. Set enrichment_status to "enriched", "partial", or "not_found" based on Apollo results.
+
+EXECUTIVE SUMMARIES: Read the ENTIRE document. 3-5 paragraphs covering core thesis, key findings with exact data points, methodology, strategic implications, and actionable takeaways. Every statistic must have a page/section citation.
+
+QUALITY GATES (include in output): total_reports_processed, contributors_found (verified from document text only), contributors_removed_for_hallucination (count of names you considered but removed because you could not verify them in the document), all_contributors_have_extraction_location (must be true), enrichment_success_rate.
+
+Return complete JSON: report_playbooks, personas, icp_summary, enriched_contacts, email_sequences, quality_gates.
+Never return text explanations — JSON only.`
 
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
 
@@ -3513,8 +3607,10 @@ Return complete JSON: report_playbooks, personas, icp_summary, enriched_contacts
         return
       }
 
-      const parsed = parseAgentResponse(result)
-      if (parsed) {
+      const rawParsed = parseAgentResponse(result)
+      if (rawParsed) {
+        // Apply client-side validation: flag unverified contributors, strip orphan contacts
+        const parsed = validateContributors(rawParsed)
         setPlaybookData(parsed)
         setSavedPlaybooks(prev => [parsed, ...prev.slice(0, 9)])
         setActiveSection('playbooks')
