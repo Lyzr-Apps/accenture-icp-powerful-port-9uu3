@@ -1122,7 +1122,7 @@ function PipelineStepper({ currentStep, isGenerating, stepTimes }: {
 
 // ─── Dashboard Screen ────────────────────────────────────────────────────────
 function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, savedPlaybooks, setActiveSection, setCurrentPlaybook, onDeletePlaybook, showSample, errorMsg }: {
-  onGenerate: (urls: string, industry: string, region: string, persona: string, keywords: string) => void
+  onGenerate: (urls: string, industry: string, region: string, persona: string, keywords: string, uploadedDocNames: string[]) => void
   isGenerating: boolean
   currentStep: number
   stepTimes: number[]
@@ -1195,16 +1195,16 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
       <div className="lg:col-span-3 space-y-6">
         <div>
           <h2 className="font-serif text-2xl tracking-wider mb-1">Generate Playbook</h2>
-          <p className="text-muted-foreground text-xs tracking-wider uppercase">Provide seed URLs and parameters to generate a per-report ABM intelligence playbook</p>
+          <p className="text-muted-foreground text-xs tracking-wider uppercase">Provide seed URLs, upload documents, or both to generate a per-report ABM intelligence playbook</p>
         </div>
 
         <div className="bg-card border border-border p-6 space-y-5">
           <div>
-            <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-2">Seed URLs</label>
+            <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-2">Seed URLs <span className="normal-case tracking-normal text-muted-foreground/50">(optional if documents uploaded)</span></label>
             <textarea
               value={urls}
               onChange={(e) => setUrls(e.target.value)}
-              placeholder="Enter report URLs, one per line..."
+              placeholder="Enter report URLs, one per line... (optional if you upload documents below)"
               rows={4}
               className="w-full bg-secondary/50 border border-border text-foreground text-sm p-3 focus:outline-none focus:border-primary transition-colors resize-none placeholder:text-muted-foreground/50"
             />
@@ -1320,8 +1320,11 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
           </div>
 
           <button
-            onClick={() => onGenerate(urls, industry, region, persona, keywords)}
-            disabled={isGenerating || !urls.trim()}
+            onClick={() => {
+              const trainedDocs = uploadedFiles.filter(f => f.status === 'trained').map(f => f.name)
+              onGenerate(urls, industry, region, persona, keywords, trainedDocs)
+            }}
+            disabled={isGenerating || (!urls.trim() && uploadedFiles.filter(f => f.status === 'trained').length === 0)}
             className="w-full bg-primary text-primary-foreground py-3 text-xs tracking-widest uppercase font-serif hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isGenerating ? (
@@ -2680,8 +2683,10 @@ export default function Page() {
     }
   }, [showSample]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleGenerate = useCallback(async (urls: string, industry: string, region: string, persona: string, keywords: string) => {
-    if (!urls.trim()) return
+  const handleGenerate = useCallback(async (urls: string, industry: string, region: string, persona: string, keywords: string, uploadedDocNames: string[] = []) => {
+    const hasUrls = urls.trim().length > 0
+    const hasDocs = uploadedDocNames.length > 0
+    if (!hasUrls && !hasDocs) return
 
     setIsGenerating(true)
     setErrorMsg('')
@@ -2704,12 +2709,32 @@ export default function Page() {
     }, 10000)
 
     try {
-      const message = `Generate ABM intelligence playbook. Process ALL reports from the knowledge base. Return JSON only.
+      // Build source context depending on what the user provided
+      let sourceContext = ''
+      if (hasUrls && hasDocs) {
+        sourceContext = `Seed URLs: ${urls}\nUploaded Documents in Knowledge Base: ${uploadedDocNames.join(', ')}\nProcess BOTH the seed URLs AND all uploaded documents from the knowledge base.`
+      } else if (hasUrls) {
+        sourceContext = `Seed URLs: ${urls}\nAlso process any relevant documents already in the knowledge base.`
+      } else {
+        sourceContext = `Uploaded Documents in Knowledge Base: ${uploadedDocNames.join(', ')}\nNo seed URLs provided. Process ONLY the uploaded documents from the knowledge base. Retrieve and analyze the full content of each uploaded document.`
+      }
 
-Seed URLs: ${urls}
+      const message = `Generate ABM intelligence playbook. Process ALL reports. Return JSON only.
+
+${sourceContext}
 Filters: Industry=${industry}, Region=${region}, Persona=${persona}${keywords ? `, Keywords=${keywords}` : ''}
 
-For each report: summarize, extract key claims with citations, assign topic tags and industry relevance scores, extract all authors/contributors (including co-authors, editors, research team, advisors), enrich contacts via Apollo for email and LinkedIn.
+CRITICAL INSTRUCTIONS FOR CONTRIBUTOR EXTRACTION:
+- Extract ONLY real people who are explicitly named in each report as authors, co-authors, editors, contributors, research leads, or cited experts.
+- DO NOT invent, guess, or hallucinate contributor names. Every contributor MUST be traceable to a specific mention in the report text.
+- For each contributor, record the exact page or section where their name appears.
+- If a report does not name any contributors, return an empty contributors array for that report rather than guessing.
+- Include ALL contributors mentioned — not just the lead author. Look for acknowledgments sections, contributor pages, research team credits, editorial teams, and cited experts within the report body.
+
+CRITICAL INSTRUCTIONS FOR EXECUTIVE SUMMARIES:
+- Read the ENTIRE document thoroughly, not just the first few pages.
+- Provide deeply insightful executive summaries that capture the full scope of each report's findings, methodology, key data points, frameworks, and strategic recommendations.
+- Executive summaries should be 3-5 paragraphs covering: core thesis, key findings with data, methodology/framework used, strategic implications, and actionable takeaways.
 
 Return the complete JSON with report_playbooks (one per report), personas, icp_summary, enriched_contacts, email_sequences, and quality_gates. Process as many reports as possible. A partial result with real data is required — never return text explanations.`
 
