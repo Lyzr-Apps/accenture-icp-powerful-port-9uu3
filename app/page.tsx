@@ -195,13 +195,130 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
         { full_name: 'Jim Wilson', report_role: 'Contributing Author', org_unit: 'Accenture Research', job_title: 'Global Managing Director - Thought Leadership & Research', company: 'Accenture', email: 'james.wilson@accenture.com', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', confidence: 'high' },
       ],
     },
+    {
+      report_title: 'Macro Foresight 2026: Top 10 Trends',
+      executive_summary: 'Accenture Strategy identifies the top 10 macroeconomic and technology trends shaping enterprise strategy in 2026, from sovereign AI policies to workforce transformation and supply chain resilience. The report provides a data-driven outlook for C-suite leaders navigating geopolitical and technological disruption.',
+      key_claims: [
+        { claim: 'Sovereign AI policies will impact 60% of global enterprises by 2027', citation_ref: 'MF2026-pg12', page_section: 'Sovereign AI, p.12', confidence_score: 0.86 },
+        { claim: 'Supply chain AI adoption will reach 78% among Fortune 500 by end of 2026', citation_ref: 'MF2026-pg28', page_section: 'Supply Chain Resilience, p.28', confidence_score: 0.79 },
+      ],
+      topic_tags: ['Sovereign AI', 'Supply Chain', 'Workforce', 'AI Transformation', 'Technology'],
+      industry_relevance: [
+        { industry: 'Financial Services', relevance_score: 0.88 },
+        { industry: 'Technology', relevance_score: 0.92 },
+        { industry: 'Healthcare', relevance_score: 0.75 },
+      ],
+      contributors: [
+        { full_name: 'Mark Knickrehm', report_role: 'Lead Author', org_unit: 'Accenture Strategy', job_title: 'Group Chief Executive - Strategy', company: 'Accenture', email: 'mark.knickrehm@accenture.com', linkedin_url: 'https://linkedin.com/in/markknickrehm', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Technology Trends 2025 in Healthcare',
+      executive_summary: 'This analysis explores how agentic AI, ambient clinical intelligence, and federated health data networks are transforming healthcare delivery, clinical trials, and patient experience. Key focus areas include AI-driven diagnostics, personalized treatment planning, and regulatory compliance for health AI.',
+      key_claims: [
+        { claim: 'Agentic AI will automate 30% of administrative healthcare workflows by 2027', citation_ref: 'HC-2025-web', page_section: 'Agentic AI in Healthcare', confidence_score: 0.82 },
+        { claim: 'AI-assisted diagnostics show 23% improvement in early detection accuracy', citation_ref: 'HC-2025-web', page_section: 'AI Diagnostics', confidence_score: 0.78 },
+      ],
+      topic_tags: ['Healthcare', 'Life Sciences', 'Agentic AI', 'AI Transformation', 'Data Analytics'],
+      industry_relevance: [
+        { industry: 'Healthcare', relevance_score: 0.97 },
+        { industry: 'Life Sciences', relevance_score: 0.93 },
+      ],
+      contributors: [
+        { full_name: 'Kaveh Safavi', report_role: 'Lead Author', org_unit: 'Accenture Health', job_title: 'Senior Managing Director - Health Industry', company: 'Accenture', email: 'kaveh.safavi@accenture.com', linkedin_url: 'https://linkedin.com/in/kavehsafavi', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Cybersecurity: AI-Augmented Cyber Threats',
+      executive_summary: 'Only 1 in 10 organizations globally are ready to protect against AI-augmented cyber threats. This report assesses the state of enterprise cyber resilience, the emerging threat landscape where adversaries leverage generative AI, and the defensive strategies organizations must adopt to maintain security posture.',
+      key_claims: [
+        { claim: 'Only 10% of organizations are fully prepared for AI-augmented cyber attacks', citation_ref: 'CYBER-2025-web', page_section: 'Cyber Readiness Assessment', confidence_score: 0.92 },
+        { claim: 'GenAI-powered phishing attacks have increased 340% since 2024', citation_ref: 'CYBER-2025-web', page_section: 'Threat Landscape', confidence_score: 0.85 },
+      ],
+      topic_tags: ['Cybersecurity', 'Risk', 'AI Transformation', 'Technology', 'GenAI'],
+      industry_relevance: [
+        { industry: 'Financial Services', relevance_score: 0.96 },
+        { industry: 'Banking', relevance_score: 0.94 },
+        { industry: 'Healthcare', relevance_score: 0.88 },
+      ],
+      contributors: [
+        { full_name: 'Paolo Dal Cin', report_role: 'Lead Author', org_unit: 'Accenture Security', job_title: 'Global Lead - Accenture Security', company: 'Accenture', email: 'paolo.dal.cin@accenture.com', linkedin_url: 'https://linkedin.com/in/paolodalcin', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Destination Net Zero',
+      executive_summary: 'This report provides a framework for achieving net-zero emissions across industries through technology-enabled sustainability transformations. It examines how AI, IoT, and digital twins are enabling organizations to measure, reduce, and offset carbon emissions while maintaining business performance.',
+      key_claims: [
+        { claim: 'AI-driven sustainability solutions can reduce carbon emissions by 15-20% within 2 years of deployment', citation_ref: 'DNZ-web', page_section: 'Technology for Sustainability', confidence_score: 0.80 },
+        { claim: 'Organizations with net-zero commitments see 12% higher investor confidence scores', citation_ref: 'DNZ-web', page_section: 'Business Case for Sustainability', confidence_score: 0.76 },
+      ],
+      topic_tags: ['Sustainability', 'Net Zero', 'Energy', 'AI Transformation', 'Technology'],
+      industry_relevance: [
+        { industry: 'Energy', relevance_score: 0.96 },
+        { industry: 'Financial Services', relevance_score: 0.72 },
+        { industry: 'Technology', relevance_score: 0.80 },
+      ],
+      contributors: [
+        { full_name: 'Peter Lacy', report_role: 'Lead Author', org_unit: 'Accenture Sustainability Services', job_title: 'Global Sustainability Services Lead', company: 'Accenture', email: 'peter.lacy@accenture.com', linkedin_url: 'https://linkedin.com/in/peterlacy', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Gen AI and Talent Transformation',
+      executive_summary: 'This report explores how generative AI is reshaping the workforce, analyzing the skills gap, reskilling imperatives, and organizational change management required to integrate AI into daily work. It provides a talent strategy framework for HR and business leaders.',
+      key_claims: [
+        { claim: '40% of all working hours can be augmented by large language models', citation_ref: 'GAIT-web', page_section: 'Workforce Impact', confidence_score: 0.88 },
+        { claim: 'Organizations investing in AI reskilling see 2x employee retention improvement', citation_ref: 'GAIT-web', page_section: 'Reskilling ROI', confidence_score: 0.83 },
+      ],
+      topic_tags: ['Workforce', 'Talent', 'GenAI', 'AI Transformation', 'Operations'],
+      industry_relevance: [
+        { industry: 'Technology', relevance_score: 0.93 },
+        { industry: 'Financial Services', relevance_score: 0.87 },
+        { industry: 'Healthcare', relevance_score: 0.78 },
+      ],
+      contributors: [
+        { full_name: 'Ellyn Shook', report_role: 'Lead Author', org_unit: 'Accenture Leadership & Culture', job_title: 'Chief Leadership & Human Resources Officer', company: 'Accenture', email: 'ellyn.shook@accenture.com', linkedin_url: 'https://linkedin.com/in/ellynshook', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: '5 Predictions for Insurance Industry 2026',
+      executive_summary: 'Accenture analyzes five key predictions for the insurance industry in 2026, covering AI-driven underwriting, agentic claims processing, embedded insurance distribution, climate risk modeling, and personalized policy design. The report provides strategic guidance for insurers navigating rapid digital transformation.',
+      key_claims: [
+        { claim: 'AI-driven underwriting will reduce processing time by 50% for commercial lines by 2027', citation_ref: 'INS-2026-web', page_section: 'AI Underwriting', confidence_score: 0.84 },
+        { claim: 'Embedded insurance premiums will reach $700B globally by end of 2026', citation_ref: 'INS-2026-web', page_section: 'Distribution Evolution', confidence_score: 0.77 },
+      ],
+      topic_tags: ['Insurance', 'AI Transformation', 'Agentic AI', 'Data Analytics'],
+      industry_relevance: [
+        { industry: 'Insurance', relevance_score: 0.98 },
+        { industry: 'Financial Services', relevance_score: 0.85 },
+      ],
+      contributors: [
+        { full_name: 'Kenneth Saldanha', report_role: 'Lead Author', org_unit: 'Accenture Insurance', job_title: 'Global Insurance Industry Lead', company: 'Accenture', email: 'kenneth.saldanha@accenture.com', linkedin_url: 'https://linkedin.com/in/kennethsaldanha', confidence: 'high' },
+      ],
+    },
+    {
+      report_title: 'Top 10 Trends in Banking 2024',
+      executive_summary: 'This report identifies the top 10 technology and business trends reshaping the banking industry, from embedded finance and real-time payments to AI-powered risk management and open banking platforms. It provides strategic guidance for banking executives navigating digital-first transformation.',
+      key_claims: [
+        { claim: 'Real-time payments will account for 30% of all electronic payments by 2026', citation_ref: 'BANK-2024-web', page_section: 'Payments Innovation', confidence_score: 0.86 },
+        { claim: 'AI-powered fraud detection reduces false positives by 60% compared to rule-based systems', citation_ref: 'BANK-2024-web', page_section: 'Risk Management', confidence_score: 0.89 },
+      ],
+      topic_tags: ['Banking', 'Payments', 'AI Transformation', 'Financial Services', 'Data Analytics'],
+      industry_relevance: [
+        { industry: 'Banking', relevance_score: 0.98 },
+        { industry: 'Financial Services', relevance_score: 0.95 },
+        { industry: 'Payments', relevance_score: 0.92 },
+      ],
+      contributors: [
+        { full_name: 'Michael Abbott', report_role: 'Lead Author', org_unit: 'Accenture Banking', job_title: 'Senior Managing Director - Global Banking Lead', company: 'Accenture', email: 'michael.abbott@accenture.com', linkedin_url: 'https://linkedin.com/in/michaelabbott', confidence: 'high' },
+      ],
+    },
   ],
   personas: [
     { role_title: 'Chief Technology Officer', seniority_level: 'C-Suite', kpis: ['System uptime 99.99%', 'Time-to-market reduction', 'Technical debt ratio'], pain_points: ['Legacy system integration complexity', 'Talent shortage for cloud-native development', 'Multi-vendor orchestration overhead'], buying_triggers: ['Board mandate for digital transformation', 'Competitive pressure from fintechs', 'Regulatory compliance deadlines'], objections: ['Migration risk to production systems', 'Total cost of ownership concerns', 'Vendor lock-in fears'], committee_neighbors: ['CIO', 'CISO', 'CFO'], report_fit_score: 94 },
     { role_title: 'VP of Digital Transformation', seniority_level: 'VP/Director', kpis: ['Digital revenue percentage', 'Customer digital adoption rate', 'Process automation coverage'], pain_points: ['Organizational resistance to change', 'Siloed technology decisions', 'Measuring transformation ROI'], buying_triggers: ['CEO strategic vision alignment', 'Customer experience benchmarking gaps', 'Operational efficiency targets'], objections: ['Timeline uncertainty', 'Resource allocation conflicts', 'Change management complexity'], committee_neighbors: ['CTO', 'COO', 'Head of Product'], report_fit_score: 87 },
   ],
   icp_summary: {
-    industry_segments: ['Banking', 'Insurance', 'Financial Services', 'Technology'],
+    industry_segments: ['Banking', 'Insurance', 'Financial Services', 'Technology', 'Healthcare', 'Life Sciences', 'Cybersecurity', 'Sustainability', 'Energy', 'Workforce & Talent'],
     company_size_bands: ['Enterprise (10,000+)', 'Large (5,000-10,000)'],
     tech_stack_hints: ['AWS', 'Azure', 'NVIDIA', 'Kubernetes', 'Terraform'],
     geographic_focus: ['North America', 'Western Europe', 'APAC'],
@@ -212,6 +329,13 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
     { full_name: 'Julie Sweet', job_title: 'Chair & CEO', company: 'Accenture', org_unit: 'Executive Office', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/juliesweet', email: 'julie.sweet@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Making Reinvention Real'], persona_tags: ['CEO', 'C-Suite'] },
     { full_name: 'Marc Carrel-Billiard', job_title: 'Global Technology Innovation Lead', company: 'Accenture', org_unit: 'Technology Innovation', location: 'Paris, France', linkedin_url: 'https://linkedin.com/in/marccb', email: 'marc.carrel-billiard@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Vision 2025'], persona_tags: ['Innovation', 'VP/Director'] },
     { full_name: 'Jim Wilson', job_title: 'Global MD - Thought Leadership', company: 'Accenture', org_unit: 'Accenture Research', location: 'Boston, MA', linkedin_url: 'https://linkedin.com/in/jimwilsonacn', email: 'james.wilson@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Reinvention in the Age of GenAI'], persona_tags: ['Research', 'VP/Director'] },
+    { full_name: 'Kaveh Safavi', job_title: 'Senior Managing Director - Health Industry', company: 'Accenture', org_unit: 'Accenture Health', location: 'Washington, DC', linkedin_url: 'https://linkedin.com/in/kavehsafavi', email: 'kaveh.safavi@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Technology Trends 2025 in Healthcare'], persona_tags: ['Healthcare', 'C-Suite'] },
+    { full_name: 'Paolo Dal Cin', job_title: 'Global Lead - Accenture Security', company: 'Accenture', org_unit: 'Accenture Security', location: 'Milan, Italy', linkedin_url: 'https://linkedin.com/in/paolodalcin', email: 'paolo.dal.cin@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Cybersecurity: AI-Augmented Cyber Threats'], persona_tags: ['CISO', 'Security'] },
+    { full_name: 'Peter Lacy', job_title: 'Global Sustainability Services Lead', company: 'Accenture', org_unit: 'Accenture Sustainability Services', location: 'London, UK', linkedin_url: 'https://linkedin.com/in/peterlacy', email: 'peter.lacy@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Destination Net Zero'], persona_tags: ['Sustainability', 'VP/Director'] },
+    { full_name: 'Ellyn Shook', job_title: 'Chief Leadership & Human Resources Officer', company: 'Accenture', org_unit: 'Accenture Leadership & Culture', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/ellynshook', email: 'ellyn.shook@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Gen AI and Talent Transformation'], persona_tags: ['CHRO', 'C-Suite'] },
+    { full_name: 'Kenneth Saldanha', job_title: 'Global Insurance Industry Lead', company: 'Accenture', org_unit: 'Accenture Insurance', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/kennethsaldanha', email: 'kenneth.saldanha@accenture.com', confidence: 'high', needs_review: false, source_reports: ['5 Predictions for Insurance Industry 2026'], persona_tags: ['Insurance', 'VP/Director'] },
+    { full_name: 'Michael Abbott', job_title: 'Senior Managing Director - Global Banking Lead', company: 'Accenture', org_unit: 'Accenture Banking', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/michaelabbott', email: 'michael.abbott@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Top 10 Trends in Banking 2024'], persona_tags: ['Banking', 'VP/Director'] },
+    { full_name: 'Mark Knickrehm', job_title: 'Group Chief Executive - Strategy', company: 'Accenture', org_unit: 'Accenture Strategy', location: 'New York, NY', linkedin_url: 'https://linkedin.com/in/markknickrehm', email: 'mark.knickrehm@accenture.com', confidence: 'high', needs_review: false, source_reports: ['Macro Foresight 2026: Top 10 Trends'], persona_tags: ['Strategy', 'C-Suite'] },
   ],
   email_sequences: [
     {
@@ -224,8 +348,8 @@ const SAMPLE_PLAYBOOK: PlaybookData = {
     },
   ],
   quality_gates: { groundedness_pass: true, dedup_pass: true, confidence_threshold_met: true, issues_flagged: [] },
-  total_contacts: 5,
-  total_reports: 4,
+  total_contacts: 12,
+  total_reports: 12,
 }
 
 // ─── Topic Tag Color Map ─────────────────────────────────────────────────────
@@ -240,7 +364,18 @@ function topicTagColor(tag: string): string {
   if (t.includes('financial')) return 'text-green-300 border-green-400/30 bg-green-400/10'
   if (t.includes('digital')) return 'text-indigo-300 border-indigo-400/30 bg-indigo-400/10'
   if (t.includes('automation')) return 'text-rose-300 border-rose-400/30 bg-rose-400/10'
-  if (t.includes('data')) return 'text-teal-300 border-teal-400/30 bg-teal-400/10'
+  if (t.includes('data') || t.includes('analytics')) return 'text-teal-300 border-teal-400/30 bg-teal-400/10'
+  if (t.includes('healthcare') || t.includes('life sciences')) return 'text-pink-300 border-pink-400/30 bg-pink-400/10'
+  if (t.includes('cybersecurity') || t.includes('risk')) return 'text-red-300 border-red-400/30 bg-red-400/10'
+  if (t.includes('sustainability') || t.includes('net zero') || t.includes('energy')) return 'text-lime-300 border-lime-400/30 bg-lime-400/10'
+  if (t.includes('workforce') || t.includes('talent')) return 'text-violet-300 border-violet-400/30 bg-violet-400/10'
+  if (t.includes('agentic')) return 'text-fuchsia-300 border-fuchsia-400/30 bg-fuchsia-400/10'
+  if (t.includes('sovereign')) return 'text-yellow-300 border-yellow-400/30 bg-yellow-400/10'
+  if (t.includes('supply chain')) return 'text-stone-300 border-stone-400/30 bg-stone-400/10'
+  if (t.includes('payments')) return 'text-emerald-200 border-emerald-300/30 bg-emerald-300/10'
+  if (t.includes('consumer')) return 'text-blue-300 border-blue-400/30 bg-blue-400/10'
+  if (t.includes('inclusion') || t.includes('diversity')) return 'text-neutral-300 border-neutral-400/30 bg-neutral-400/10'
+  if (t.includes('autonomous') || t.includes('quantum') || t.includes('edge') || t.includes('spatial')) return 'text-cyan-200 border-cyan-300/30 bg-cyan-300/10'
   return 'text-primary border-primary/20 bg-primary/10'
 }
 
@@ -555,6 +690,13 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
                 <option value="Insurance">Insurance</option>
                 <option value="Financial Services">Financial Services</option>
                 <option value="Technology">Technology</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Life Sciences">Life Sciences</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Workforce & Talent">Workforce & Talent</option>
+                <option value="Sustainability & Energy">Sustainability & Energy</option>
+                <option value="Supply Chain">Supply Chain</option>
+                <option value="Consumer">Consumer</option>
               </select>
             </div>
             <div>
@@ -1812,7 +1954,63 @@ export default function Page() {
     }, 10000)
 
     try {
-      const message = `Generate a per-report ABM intelligence playbook.\n\nSeed URLs:\n${urls}\n\nFilters:\n- Industry: ${industry}\n- Region: ${region}\n- Persona Focus: ${persona}\n${keywords ? `- Keywords: ${keywords}` : ''}\n\nIMPORTANT INSTRUCTIONS:\n1. Read EACH report in the knowledge base individually\n2. For EACH report, produce a summary with key claims, topic tags (AI Transformation, AWS, NVIDIA, Cloud, Technology, Financial Services, Banking, Insurance, GenAI), and industry relevance\n3. For EACH report, extract ALL authors and contributors by searching for "Authors", "Contributors", "Acknowledgements", "About the Authors", "Research Team", "Written by" sections\n4. Enrich EVERY extracted contributor via Apollo to get their email address and LinkedIn URL\n5. Return results in the report_playbooks array where each report has its own contributors list\n6. Also generate personas, ICP summary, and ABM email sequences\n\nThe report_playbooks array MUST have one entry per report, each with its own contributors array containing real people with email and linkedin_url fields.`
+      const message = `Generate a comprehensive per-report ABM intelligence playbook covering ALL reports in the knowledge base.
+
+Seed URLs:
+${urls}
+
+Filters:
+- Industry: ${industry}
+- Region: ${region}
+- Persona Focus: ${persona}
+${keywords ? `- Keywords: ${keywords}` : ''}
+
+CRITICAL — PROCESS ALL REPORTS. The knowledge base contains 28+ sources. You MUST create a report_playbooks entry for EVERY SINGLE ONE. Do NOT stop at 3-4 reports.
+
+MANDATORY REPORT LIST — create a report_playbooks entry for each:
+
+PDF REPORTS:
+1. Accenture Technology Vision 2025
+2. The Art of AI Maturity
+3. Making Reinvention Real with GenAI
+4. Reinvention in the Age of Generative AI
+5. Macro Foresight 2026: Top 10 Trends
+6. Accenture Technology Vision 2024
+7. Built to Scale
+8. Life Trends 2025
+9. Accenture Annual Report 2025
+10. WEF AI in Action 2025
+
+WEB SOURCES:
+11. Pulse of Change Index
+12. Technology Trends 2025
+13. Technology Trends 2024
+14. Sovereign AI
+15. Top 10 Trends in Banking 2024
+16. Banking Payments
+17. 5 Predictions for Insurance Industry 2026
+18. Technology Trends 2025 in Healthcare
+19. Cybersecurity: AI-Augmented Cyber Threats
+20. Gen AI and Talent Transformation
+21. Life Trends (web)
+22. Destination Net Zero
+23. Accenture Fact Sheet
+24. Autonomous Networks Acquisition
+25. Aircraft Interiors Expo
+26. Inclusion & Diversity Index
+27. Pulse of Change South Africa January 2025
+28. Accenture Investor Relations
+
+INSTRUCTIONS:
+1. Read EACH report in the knowledge base individually — all 28+ sources
+2. For EACH report, produce a summary with key claims, topic tags (AI Transformation, Agentic AI, Sovereign AI, Cloud, Technology, Financial Services, Banking, Insurance, Healthcare, Life Sciences, Cybersecurity, Workforce, Sustainability, Energy, GenAI, Payments, Data, Analytics, Supply Chain, Net Zero), and industry relevance
+3. For EACH report, extract ALL people who contributed — not just lead authors but also co-authors, contributing authors, editors, research team members, advisors, reviewers, foreword authors, project managers, design team, data analysts, industry leads, external contributors, and anyone acknowledged in the report. Search title pages, copyright pages, "Authors", "Contributors", "Acknowledgements", "About the Authors", "Research Team", "Advisory Board", "Editors", "Written by", footnotes, endnotes, back covers, and body text for named experts
+4. Enrich EVERY extracted contributor via Apollo to get their verified email address and LinkedIn URL
+5. Return results in the report_playbooks array — one entry per report, each with its own contributors array containing real people with email and linkedin_url fields
+6. Generate personas, ICP summary, and ABM email sequences across all reports
+7. Set total_reports to the actual number of reports processed (target: 28+)
+
+The report_playbooks array MUST have one entry per report. Do NOT truncate or limit the output.`
 
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
 
