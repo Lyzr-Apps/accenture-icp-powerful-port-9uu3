@@ -392,17 +392,114 @@ const PIPELINE_STEPS = [
 ]
 
 // ─── Parse Agent Response ────────────────────────────────────────────────────
-function parseAgentResponse(result: any): PlaybookData | null {
-  if (!result || !result.success) return null
+function findPlaybookData(obj: any, depth: number = 0): any {
+  if (!obj || typeof obj !== 'object' || depth > 8) return null
+  // Direct match: object has report_playbooks
+  if (Array.isArray(obj.report_playbooks)) return obj
+  // Check nested keys commonly used by Lyzr responses
+  const searchKeys = ['result', 'response', 'data', 'output', 'content', 'message', 'text']
+  for (const key of searchKeys) {
+    if (obj[key] != null) {
+      // If it's a string, try to parse as JSON
+      if (typeof obj[key] === 'string') {
+        try {
+          const parsed = JSON.parse(obj[key])
+          const found = findPlaybookData(parsed, depth + 1)
+          if (found) return found
+        } catch { /* not JSON string */ }
+      } else if (typeof obj[key] === 'object') {
+        const found = findPlaybookData(obj[key], depth + 1)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
 
-  let data = result?.response?.result
-  if (!data && result?.response?.message) {
-    try { data = JSON.parse(result.response.message) } catch { /* ignore */ }
+function parseAgentResponse(result: any): PlaybookData | null {
+  if (!result) return null
+
+  // Log for debugging
+  console.log('[parseAgentResponse] result.success:', result?.success)
+  console.log('[parseAgentResponse] result.error:', result?.error)
+  console.log('[parseAgentResponse] result.response?.status:', result?.response?.status)
+  console.log('[parseAgentResponse] result.response?.result keys:', result?.response?.result ? Object.keys(result.response.result) : 'N/A')
+
+  // If result.success is false, still try to find data in the response
+  // (some responses return success:true at poll level but different structure)
+
+  let data: any = null
+
+  // Strategy 1: Standard path result.response.result
+  if (result?.response?.result && typeof result.response.result === 'object') {
+    if (Array.isArray(result.response.result.report_playbooks)) {
+      data = result.response.result
+    }
   }
+
+  // Strategy 2: Deep search through the entire result object
+  if (!data) {
+    data = findPlaybookData(result)
+  }
+
+  // Strategy 3: Try result.response.message as JSON string
+  if (!data && result?.response?.message && typeof result.response.message === 'string') {
+    try {
+      const parsed = JSON.parse(result.response.message)
+      data = findPlaybookData(parsed) || (Array.isArray(parsed?.report_playbooks) ? parsed : null)
+    } catch { /* not JSON */ }
+  }
+
+  // Strategy 4: Try raw_response as JSON string
   if (!data && typeof result?.raw_response === 'string') {
-    try { data = JSON.parse(result.raw_response) } catch { /* ignore */ }
+    try {
+      const parsed = JSON.parse(result.raw_response)
+      data = findPlaybookData(parsed) || (Array.isArray(parsed?.report_playbooks) ? parsed : null)
+    } catch { /* not JSON */ }
   }
-  if (!data) return null
+
+  // Strategy 5: result.response itself might be the data
+  if (!data && result?.response && Array.isArray(result.response.report_playbooks)) {
+    data = result.response
+  }
+
+  // Strategy 6: result itself might contain the data (flat response)
+  if (!data && Array.isArray(result?.report_playbooks)) {
+    data = result
+  }
+
+  // Strategy 7: For manager agents with file_output, check module_outputs.artifact_files
+  // The structured data might be in the artifact files as a JSON download
+  // In this case, we still need the response data — try result.response.result.text parsed as JSON
+  if (!data && result?.response?.result?.text) {
+    try {
+      const textParsed = JSON.parse(result.response.result.text)
+      data = findPlaybookData(textParsed) || (Array.isArray(textParsed?.report_playbooks) ? textParsed : null)
+    } catch { /* not JSON text */ }
+  }
+
+  // Strategy 8: Try deeply nested result.response.response (double-wrapped)
+  if (!data && result?.response?.response) {
+    const inner = result.response.response
+    if (typeof inner === 'string') {
+      try {
+        const parsed = JSON.parse(inner)
+        data = findPlaybookData(parsed) || (Array.isArray(parsed?.report_playbooks) ? parsed : null)
+      } catch { /* not JSON */ }
+    } else if (typeof inner === 'object') {
+      data = findPlaybookData(inner) || (Array.isArray(inner?.report_playbooks) ? inner : null)
+    }
+  }
+
+  if (!data) {
+    console.log('[parseAgentResponse] FAILED - no data found. Full result keys:', result ? Object.keys(result) : 'null')
+    if (result?.response) console.log('[parseAgentResponse] response keys:', Object.keys(result.response))
+    if (result?.response?.result) console.log('[parseAgentResponse] result.response.result type:', typeof result.response.result, 'value preview:', JSON.stringify(result.response.result).substring(0, 500))
+    if (result?.raw_response) console.log('[parseAgentResponse] raw_response preview:', String(result.raw_response).substring(0, 500))
+    return null
+  }
+
+  console.log('[parseAgentResponse] SUCCESS - found data with', Array.isArray(data.report_playbooks) ? data.report_playbooks.length : 0, 'report_playbooks')
 
   const artifactFiles = Array.isArray(result?.module_outputs?.artifact_files)
     ? result.module_outputs.artifact_files
@@ -2019,15 +2116,36 @@ The report_playbooks array MUST have one entry per report. Do NOT truncate or li
       const finalTimes = PIPELINE_STEPS.map((_, i) => times[i] || Math.round((Date.now() - startTime) / 1000 / 8))
       setStepTimes(finalTimes)
 
+      console.log('[handleGenerate] Raw result from callAIAgent:', JSON.stringify(result).substring(0, 2000))
+
+      // Check if the agent returned an error
+      if (!result?.success && result?.error) {
+        setErrorMsg(`Agent error: ${result.error}`)
+        return
+      }
+
       const parsed = parseAgentResponse(result)
       if (parsed) {
         setPlaybookData(parsed)
         setSavedPlaybooks(prev => [parsed, ...prev.slice(0, 9)])
         setActiveSection('playbooks')
       } else {
-        setErrorMsg('Failed to parse playbook response. The agent may have returned an unexpected format.')
+        // Build diagnostic message
+        const diag: string[] = ['Failed to parse playbook response.']
+        if (result?.error) diag.push(`Error: ${result.error}`)
+        if (result?.response?.status === 'error') diag.push(`Agent status: error - ${result.response.message || 'no message'}`)
+        if (result?.response?.result && typeof result.response.result === 'object') {
+          const keys = Object.keys(result.response.result)
+          if (keys.length > 0) diag.push(`Response keys: ${keys.join(', ')}`)
+          else diag.push('Response result was empty object.')
+        }
+        if (result?.response?.message && !result?.response?.result) {
+          diag.push(`Message: ${String(result.response.message).substring(0, 200)}`)
+        }
+        setErrorMsg(diag.join(' '))
       }
     } catch (err: any) {
+      console.error('[handleGenerate] Exception:', err)
       setErrorMsg(err?.message || 'An error occurred while generating the playbook.')
     } finally {
       if (stepIntervalRef.current) clearInterval(stepIntervalRef.current)

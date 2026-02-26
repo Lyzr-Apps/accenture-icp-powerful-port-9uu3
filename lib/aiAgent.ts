@@ -75,7 +75,7 @@ export interface UploadResponse {
   error?: string
 }
 
-const POLL_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
+const POLL_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes — manager agents with many sub-agents need more time
 
 /**
  * Call the AI Agent via server-side API route.

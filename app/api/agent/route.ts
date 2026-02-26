@@ -277,21 +277,42 @@ async function pollTask(task_id: string) {
   }
 
   // Task completed — envelope extraction + parseLLMJson + normalizeResponse
-  const rawText = JSON.stringify(task.response)
+  console.log('[pollTask] Task completed. task.status:', task.status)
+  console.log('[pollTask] task.response type:', typeof task.response)
+  console.log('[pollTask] task.response preview:', JSON.stringify(task.response).substring(0, 1500))
+  const taskResponse = task.response
+  const rawText = typeof taskResponse === 'string' ? taskResponse : JSON.stringify(taskResponse)
   let moduleOutputs: ModuleOutputs | undefined
-  let agentResponseRaw: any = rawText
+  let agentResponseRaw: any
 
-  try {
-    const envelope = JSON.parse(rawText)
-    if (envelope && typeof envelope === 'object' && 'response' in envelope) {
-      moduleOutputs = envelope.module_outputs
-      agentResponseRaw = envelope.response
+  // Handle different response shapes from Lyzr
+  if (typeof taskResponse === 'object' && taskResponse !== null) {
+    // Object response — check for envelope pattern { response: ..., module_outputs: ... }
+    if ('response' in taskResponse) {
+      moduleOutputs = taskResponse.module_outputs
+      agentResponseRaw = taskResponse.response
+    } else if ('module_outputs' in taskResponse) {
+      // Has module_outputs but no nested response — the rest is the data
+      moduleOutputs = taskResponse.module_outputs
+      const { module_outputs: _mo, ...rest } = taskResponse
+      agentResponseRaw = Object.keys(rest).length > 0 ? rest : taskResponse
+    } else {
+      // Flat object — the response IS the data
+      agentResponseRaw = taskResponse
     }
-  } catch {
-    // Not standard JSON envelope — parseLLMJson will handle it
+  } else {
+    // String response — pass to parseLLMJson as-is
+    agentResponseRaw = taskResponse
   }
 
+  console.log('[pollTask] agentResponseRaw type:', typeof agentResponseRaw)
+  console.log('[pollTask] agentResponseRaw preview:', JSON.stringify(agentResponseRaw).substring(0, 1000))
+
   const parsed = parseLLMJson(agentResponseRaw)
+
+  console.log('[pollTask] parseLLMJson result type:', typeof parsed)
+  console.log('[pollTask] parseLLMJson result keys:', parsed && typeof parsed === 'object' ? Object.keys(parsed) : 'not-object')
+  console.log('[pollTask] has report_playbooks:', parsed && typeof parsed === 'object' && Array.isArray(parsed.report_playbooks))
 
   const toNormalize =
     parsed && typeof parsed === 'object' && parsed.success === false && parsed.data === null
@@ -299,6 +320,15 @@ async function pollTask(task_id: string) {
       : parsed
 
   const normalized = normalizeResponse(toNormalize)
+
+  console.log('[pollTask] normalized.status:', normalized.status)
+  console.log('[pollTask] normalized.result keys:', normalized.result ? Object.keys(normalized.result) : 'null')
+  console.log('[pollTask] normalized.result has report_playbooks:', Array.isArray(normalized.result?.report_playbooks))
+
+  // Also check if module_outputs is inside the parsed response
+  if (!moduleOutputs && parsed && typeof parsed === 'object') {
+    if (parsed.module_outputs) moduleOutputs = parsed.module_outputs
+  }
 
   return NextResponse.json({
     success: true,
