@@ -11,7 +11,33 @@
       "Accenture-Tech-Vision-2025.pdf",
       "Accenture-Art-of-AI-Maturity-Report.pdf",
       "Making-Reinvention-Real-With-GenAI-TL.pdf",
-      "Accenture-Reinvention-in-the-age-of-generative-AI-Report.pdf"
+      "Accenture-Reinvention-in-the-age-of-generative-AI-Report.pdf",
+      "Accenture-Strategy-Macro-Foresight-2026-Top10-Trends.pdf",
+      "Accenture-Tech-Vision-2024.pdf",
+      "Accenture-Built-To-Scale-Report.pdf",
+      "Accenture-LifeTrends2025-Report.pdf",
+      "Accenture-Annual-Report-2025.pdf",
+      "WEF-AI-in-Action-2025.pdf"
+    ],
+    "crawled_urls": [
+      "https://www.accenture.com/us-en/insights/pulse-of-change",
+      "https://www.accenture.com/us-en/insights/technology/technology-trends-2025",
+      "https://www.accenture.com/us-en/insights/technology/technology-trends-2024",
+      "https://www.accenture.com/gb-en/insights/technology/sovereign-ai",
+      "https://www.accenture.com/gb-en/insights/banking/top-10-trends-banking-2024",
+      "https://www.accenture.com/us-en/industries/banking/payments",
+      "https://insuranceblog.accenture.com/5-predictions-insurance-industry-2026",
+      "https://www.accenture.com/us-en/blogs/health/accenture-technology-trends-2025-healthcare",
+      "https://newsroom.accenture.com/news/2025/only-one-in-10-organizations-globally-are-ready-to-protect-against-ai-augmented-cyber-threats",
+      "https://www.accenture.com/au-en/insights/consulting/gen-ai-talent",
+      "https://www.accenture.com/us-en/insights/song/accenture-life-trends",
+      "https://www.accenture.com/gb-en/insights/sustainability/destination-net-zero",
+      "https://newsroom.accenture.com/fact-sheet",
+      "https://newsroom.accenture.com/news/2026/accenture-acquires-advanced-ai-technology-to-help-communications-companies-accelerate-autonomous-network-journeys",
+      "https://www.accenture.com/gb-en/about/events/aircraft-interiors-expo",
+      "https://www.accenture.com/ca-en/about/inclusion-diversity-index",
+      "https://www.accenture.com/za-en/insights/pulse-of-change-january-2025",
+      "https://investor.accenture.com/"
     ]
   },
   "agents": {
