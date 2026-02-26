@@ -1199,27 +1199,22 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
         </div>
 
         <div className="bg-card border border-border p-6 space-y-5">
+          {/* Unified Source Input: URLs + Document Upload */}
           <div>
-            <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-2">Seed URLs <span className="normal-case tracking-normal text-muted-foreground/50">(optional if documents uploaded)</span></label>
-            <textarea
-              value={urls}
-              onChange={(e) => setUrls(e.target.value)}
-              placeholder="Enter report URLs, one per line... (optional if you upload documents below)"
-              rows={4}
-              className="w-full bg-secondary/50 border border-border text-foreground text-sm p-3 focus:outline-none focus:border-primary transition-colors resize-none placeholder:text-muted-foreground/50"
-            />
-          </div>
-
-          {/* File Upload Section */}
-          <div>
-            <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-2">Upload Reports</label>
+            <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-2">Report Sources</label>
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={handleDrop}
-              className={`border border-dashed p-4 text-center transition-colors cursor-pointer ${isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
-              onClick={() => uploadInputRef.current?.click()}
+              className={`border transition-colors ${isDragOver ? 'border-primary bg-primary/5' : 'border-border'}`}
             >
+              <textarea
+                value={urls}
+                onChange={(e) => setUrls(e.target.value)}
+                placeholder="Paste report URLs here, one per line..."
+                rows={3}
+                className="w-full bg-secondary/50 text-foreground text-sm p-3 focus:outline-none transition-colors resize-none placeholder:text-muted-foreground/50 border-0 border-b border-border"
+              />
               <input
                 ref={uploadInputRef}
                 type="file"
@@ -1228,46 +1223,60 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
                 onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                 className="hidden"
               />
-              <FiUpload className="mx-auto text-muted-foreground mb-2" size={20} />
-              <p className="text-xs text-muted-foreground tracking-wider">
-                Drop PDF, DOCX, or TXT files here or <span className="text-primary">browse</span>
-              </p>
-              <p className="text-xs text-muted-foreground/50 mt-1">Files are uploaded to the knowledge base for agent processing</p>
-            </div>
 
-            {uploadedFiles.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {uploadedFiles.map((file, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-1.5 px-3 bg-secondary/30 border border-border/50">
-                    <div className="flex items-center gap-2">
-                      <FiFileText size={12} className="text-muted-foreground flex-shrink-0" />
-                      <span className="text-xs text-foreground/80 truncate max-w-[200px]">{file.name}</span>
-                      {file.status === 'uploading' && (
-                        <span className="flex items-center gap-1 text-xs text-primary">
-                          <FiLoader className="animate-spin" size={10} /> Training
-                        </span>
-                      )}
-                      {file.status === 'trained' && (
-                        <span className="flex items-center gap-1 text-xs text-green-400">
-                          <FiCheck size={10} /> Trained
-                        </span>
-                      )}
-                      {file.status === 'failed' && (
-                        <span className="flex items-center gap-1 text-xs text-destructive" title={file.error}>
-                          <FiAlertTriangle size={10} /> Failed
-                        </span>
-                      )}
+              {/* Uploaded files list */}
+              {uploadedFiles.length > 0 && (
+                <div className="border-b border-border">
+                  {uploadedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-1.5 px-3 border-b border-border/30 last:border-b-0 bg-secondary/20">
+                      <div className="flex items-center gap-2">
+                        <FiFileText size={12} className="text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs text-foreground/80 truncate max-w-[240px]">{file.name}</span>
+                        {file.status === 'uploading' && (
+                          <span className="flex items-center gap-1 text-xs text-primary">
+                            <FiLoader className="animate-spin" size={10} /> Training
+                          </span>
+                        )}
+                        {file.status === 'trained' && (
+                          <span className="flex items-center gap-1 text-xs text-green-400">
+                            <FiCheck size={10} /> Ready
+                          </span>
+                        )}
+                        {file.status === 'failed' && (
+                          <span className="flex items-center gap-1 text-xs text-destructive" title={file.error}>
+                            <FiAlertTriangle size={10} /> Failed
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeUploadedFile(file.name) }}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                      >
+                        <FiX size={12} />
+                      </button>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeUploadedFile(file.name) }}
-                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
-                    >
-                      <FiX size={12} />
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+
+              {/* Upload action bar */}
+              <div className="flex items-center justify-between px-3 py-2 bg-secondary/10">
+                <button
+                  type="button"
+                  onClick={() => uploadInputRef.current?.click()}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors tracking-wider"
+                >
+                  <FiUpload size={12} />
+                  <span>Upload PDF, DOCX, or TXT</span>
+                </button>
+                <span className="text-xs text-muted-foreground/40">
+                  {urls.trim() ? `${urls.trim().split('\n').filter(u => u.trim()).length} URL${urls.trim().split('\n').filter(u => u.trim()).length !== 1 ? 's' : ''}` : ''}
+                  {urls.trim() && uploadedFiles.length > 0 ? ' + ' : ''}
+                  {uploadedFiles.length > 0 ? `${uploadedFiles.length} file${uploadedFiles.length !== 1 ? 's' : ''}` : ''}
+                </span>
               </div>
-            )}
+            </div>
+            <p className="text-xs text-muted-foreground/40 mt-1.5">Paste URLs, drag & drop files, or both — the pipeline processes all sources together</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
