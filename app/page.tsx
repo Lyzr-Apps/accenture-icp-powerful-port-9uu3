@@ -843,7 +843,7 @@ function PipelineStepper({ currentStep, isGenerating, stepTimes }: {
 }
 
 // ─── Dashboard Screen ────────────────────────────────────────────────────────
-function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, savedPlaybooks, setActiveSection, setCurrentPlaybook, showSample, errorMsg }: {
+function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, savedPlaybooks, setActiveSection, setCurrentPlaybook, onDeletePlaybook, showSample, errorMsg }: {
   onGenerate: (urls: string, industry: string, region: string, persona: string, keywords: string) => void
   isGenerating: boolean
   currentStep: number
@@ -851,6 +851,7 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
   savedPlaybooks: PlaybookData[]
   setActiveSection: (s: ActiveSection) => void
   setCurrentPlaybook: (p: PlaybookData) => void
+  onDeletePlaybook: (idx: number) => void
   showSample: boolean
   errorMsg: string
 }) {
@@ -1089,23 +1090,34 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
             {savedPlaybooks.map((pb, idx) => {
               const reportCount = Array.isArray(pb?.report_playbooks) ? pb.report_playbooks.length : 0
               return (
-                <button
+                <div
                   key={idx}
-                  onClick={() => { setCurrentPlaybook(pb); setActiveSection('playbooks') }}
-                  className="w-full text-left bg-card border border-border p-4 hover:border-primary/30 transition-all duration-200 group"
+                  className="relative bg-card border border-border hover:border-primary/30 transition-all duration-200 group"
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="text-sm font-serif tracking-wider group-hover:text-primary transition-colors line-clamp-2">{pb.playbook_id || 'Untitled Playbook'}</h4>
-                    <span className={`text-xs tracking-widest uppercase px-2 py-0.5 border flex-shrink-0 ${pb.pipeline_status === 'completed' ? 'text-green-400 border-green-400/30' : 'text-amber-400 border-amber-400/30'}`}>
-                      {pb.pipeline_status || 'Unknown'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><FiFileText size={11} /> {reportCount} report{reportCount !== 1 ? 's' : ''}</span>
-                    <span className="flex items-center gap-1"><FiUsers size={11} /> {pb.total_contacts ?? 0} contacts</span>
-                    <span className="flex items-center gap-1"><FiClock size={11} /> {pb.generation_date ? new Date(pb.generation_date).toLocaleDateString() : 'N/A'}</span>
-                  </div>
-                </button>
+                  <button
+                    onClick={() => { setCurrentPlaybook(pb); setActiveSection('playbooks') }}
+                    className="w-full text-left p-4"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="text-sm font-serif tracking-wider group-hover:text-primary transition-colors line-clamp-2">{pb.playbook_id || 'Untitled Playbook'}</h4>
+                      <span className={`text-xs tracking-widest uppercase px-2 py-0.5 border flex-shrink-0 ${pb.pipeline_status === 'completed' ? 'text-green-400 border-green-400/30' : 'text-amber-400 border-amber-400/30'}`}>
+                        {pb.pipeline_status || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><FiFileText size={11} /> {reportCount} report{reportCount !== 1 ? 's' : ''}</span>
+                      <span className="flex items-center gap-1"><FiUsers size={11} /> {pb.total_contacts ?? 0} contacts</span>
+                      <span className="flex items-center gap-1"><FiClock size={11} /> {pb.generation_date ? new Date(pb.generation_date).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeletePlaybook(idx) }}
+                    className="absolute top-3 right-3 p-1.5 text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive transition-all"
+                    title="Delete playbook"
+                  >
+                    <FiTrash2 size={13} />
+                  </button>
+                </div>
               )
             })}
           </div>
@@ -1320,10 +1332,11 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId }: {
 }
 
 // ─── Playbook Results Screen ─────────────────────────────────────────────────
-function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
+function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybook }: {
   playbook: PlaybookData
   copiedId: string
   setCopiedId: (id: string) => void
+  onDeletePlaybook: () => void
 }) {
   const [activeTab, setActiveTab] = useState(0)
   const [selectedTopic, setSelectedTopic] = useState('All')
@@ -1382,11 +1395,19 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId }: {
             </span>
           </div>
         </div>
-        {/* Quality Gates */}
-        <div className="flex items-center gap-3">
-          {playbook?.quality_gates?.groundedness_pass && <span className="flex items-center gap-1 text-xs text-green-400"><FiShield size={12} /> Grounded</span>}
-          {playbook?.quality_gates?.dedup_pass && <span className="flex items-center gap-1 text-xs text-green-400"><FiCheck size={12} /> Deduped</span>}
-          {playbook?.quality_gates?.confidence_threshold_met && <span className="flex items-center gap-1 text-xs text-green-400"><FiActivity size={12} /> Confidence Met</span>}
+        {/* Quality Gates & Actions */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {playbook?.quality_gates?.groundedness_pass && <span className="flex items-center gap-1 text-xs text-green-400"><FiShield size={12} /> Grounded</span>}
+            {playbook?.quality_gates?.dedup_pass && <span className="flex items-center gap-1 text-xs text-green-400"><FiCheck size={12} /> Deduped</span>}
+            {playbook?.quality_gates?.confidence_threshold_met && <span className="flex items-center gap-1 text-xs text-green-400"><FiActivity size={12} /> Confidence Met</span>}
+          </div>
+          <button
+            onClick={onDeletePlaybook}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-muted-foreground text-xs tracking-widest uppercase hover:border-destructive hover:text-destructive transition-colors"
+          >
+            <FiTrash2 size={12} /> Delete
+          </button>
         </div>
       </div>
 
@@ -2328,6 +2349,31 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
     }
   }, [])
 
+  const handleDeletePlaybook = useCallback((idx: number) => {
+    setSavedPlaybooks(prev => {
+      const updated = prev.filter((_, i) => i !== idx)
+      try { localStorage.setItem('abm_playbooks', JSON.stringify(updated)) } catch { /* ignore */ }
+      return updated
+    })
+    // If the deleted playbook is the currently viewed one, clear it
+    setPlaybookData(current => {
+      if (current && savedPlaybooks[idx] && current.playbook_id === savedPlaybooks[idx].playbook_id && current.generation_date === savedPlaybooks[idx].generation_date) {
+        return null
+      }
+      return current
+    })
+  }, [savedPlaybooks])
+
+  const handleDeleteCurrentPlaybook = useCallback(() => {
+    if (!playbookData) return
+    const idx = savedPlaybooks.findIndex(p => p.playbook_id === playbookData.playbook_id && p.generation_date === playbookData.generation_date)
+    if (idx !== -1) {
+      handleDeletePlaybook(idx)
+    }
+    setPlaybookData(null)
+    setActiveSection('dashboard')
+  }, [playbookData, savedPlaybooks, handleDeletePlaybook])
+
   // Aggregate all contacts from saved playbooks
   const allContacts: EnrichedContact[] = savedPlaybooks.reduce<EnrichedContact[]>((acc, pb) => {
     if (Array.isArray(pb?.enriched_contacts)) {
@@ -2394,6 +2440,7 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
                 savedPlaybooks={savedPlaybooks}
                 setActiveSection={setActiveSection}
                 setCurrentPlaybook={setPlaybookData}
+                onDeletePlaybook={handleDeletePlaybook}
                 showSample={showSample}
                 errorMsg={errorMsg}
               />
@@ -2405,6 +2452,7 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
                   playbook={playbookData}
                   copiedId={copiedId}
                   setCopiedId={setCopiedId}
+                  onDeletePlaybook={handleDeleteCurrentPlaybook}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-24">
