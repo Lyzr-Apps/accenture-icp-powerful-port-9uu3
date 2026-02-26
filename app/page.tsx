@@ -21,6 +21,7 @@ interface ReportContributor {
   linkedin_url: string
   confidence: string
   extraction_location: string
+  enrichment_status: string
 }
 
 interface ReportKeyClaim {
@@ -75,6 +76,8 @@ interface EnrichedContact {
   needs_review: boolean
   source_reports: string[]
   persona_tags: string[]
+  enrichment_status: string
+  confidence_score: number
 }
 
 interface EmailVariant {
@@ -102,6 +105,7 @@ interface QualityGates {
   contributors_removed_for_hallucination?: number
   all_contributors_have_extraction_location?: boolean
   all_claims_have_citations?: boolean
+  enrichment_success_rate?: number
 }
 
 interface PlaybookData {
@@ -723,6 +727,7 @@ function parseAgentResponse(result: any): PlaybookData | null {
       contributors: Array.isArray(rp.contributors) ? rp.contributors.map((c: any) => ({
         ...c,
         extraction_location: c.extraction_location || c.found_at || '',
+        enrichment_status: c.enrichment_status || '',
       })) : [],
     })) : [],
     personas: Array.isArray(data.personas) ? data.personas : [],
@@ -739,6 +744,7 @@ function parseAgentResponse(result: any): PlaybookData | null {
       contributors_removed_for_hallucination: data.quality_gates?.contributors_removed_for_hallucination,
       all_contributors_have_extraction_location: data.quality_gates?.all_contributors_have_extraction_location,
       all_claims_have_citations: data.quality_gates?.all_claims_have_citations,
+      enrichment_success_rate: data.quality_gates?.enrichment_success_rate,
     },
     total_contacts: data.total_contacts || 0,
     total_reports: data.total_reports || 0,
@@ -748,10 +754,10 @@ function parseAgentResponse(result: any): PlaybookData | null {
 
 // ─── Utility Functions ───────────────────────────────────────────────────────
 function exportContactsCSV(contacts: EnrichedContact[]) {
-  const headers = ['Name', 'Title', 'Company', 'Org Unit', 'Location', 'LinkedIn', 'Email', 'Confidence', 'Needs Review', 'Source Reports', 'Persona Tags']
+  const headers = ['Name', 'Title', 'Company', 'Org Unit', 'Location', 'LinkedIn', 'Email', 'Enrichment Status', 'Confidence', 'Needs Review', 'Source Reports', 'Persona Tags']
   const rows = contacts.map(c => [
     c.full_name, c.job_title, c.company, c.org_unit, c.location,
-    c.linkedin_url, c.email, c.confidence, c.needs_review ? 'Yes' : 'No',
+    c.linkedin_url, c.email, c.enrichment_status || '', c.confidence, c.needs_review ? 'Yes' : 'No',
     Array.isArray(c.source_reports) ? c.source_reports.join('; ') : '',
     Array.isArray(c.persona_tags) ? c.persona_tags.join('; ') : '',
   ])
@@ -801,6 +807,16 @@ function confidenceColor(c: string | number): string {
   if (s === 'high') return 'text-green-400 border-green-400/30 bg-green-400/10'
   if (s === 'medium') return 'text-amber-400 border-amber-400/30 bg-amber-400/10'
   return 'text-red-400 border-red-400/30 bg-red-400/10'
+}
+
+function enrichmentStatusStyle(status: string): { text: string; classes: string } {
+  const s = (status || '').toLowerCase()
+  if (s === 'enriched') return { text: 'Enriched', classes: 'text-green-400 border-green-400/30 bg-green-400/10' }
+  if (s === 'partial') return { text: 'Partial', classes: 'text-amber-400 border-amber-400/30 bg-amber-400/10' }
+  if (s === 'not_found' || s === 'not found') return { text: 'Not Found', classes: 'text-muted-foreground border-border bg-muted/20' }
+  if (s === 'api_unavailable' || s === 'api unavailable') return { text: 'API N/A', classes: 'text-red-400/70 border-red-400/20 bg-red-400/5' }
+  if (!s) return { text: 'Pending', classes: 'text-muted-foreground/50 border-border/50 bg-transparent' }
+  return { text: status, classes: 'text-muted-foreground border-border bg-muted/10' }
 }
 
 function confidenceBarColor(score: number): string {
@@ -1654,6 +1670,7 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Role</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Title / Company</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Source Location</th>
+                  <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Enrichment</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal">Email</th>
                   <th className="text-left p-2 text-xs tracking-widest uppercase text-muted-foreground font-normal w-8">Li</th>
                 </tr>
@@ -1689,6 +1706,16 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts 
                             Unverified
                           </span>
                         )}
+                      </td>
+                      <td className="p-2">
+                        {(() => {
+                          const es = enrichmentStatusStyle(contrib.enrichment_status)
+                          return (
+                            <span className={`text-xs uppercase tracking-wider px-1.5 py-0.5 border ${es.classes}`}>
+                              {es.text}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="p-2">
                         <div className="flex items-center gap-1">
@@ -1893,6 +1920,11 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
             {playbook?.quality_gates?.all_contributors_have_extraction_location === true && (
               <span className="flex items-center gap-1 text-xs text-green-400"><FiShield size={12} /> All sourced</span>
             )}
+            {typeof playbook?.quality_gates?.enrichment_success_rate === 'number' && (
+              <span className={`flex items-center gap-1 text-xs ${playbook.quality_gates.enrichment_success_rate >= 0.7 ? 'text-green-400' : playbook.quality_gates.enrichment_success_rate >= 0.4 ? 'text-amber-400' : 'text-red-400/70'}`}>
+                <FiDatabase size={12} /> {Math.round(playbook.quality_gates.enrichment_success_rate * 100)}% enriched
+              </span>
+            )}
           </div>
           <button
             onClick={onDeletePlaybook}
@@ -2094,6 +2126,23 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
         {/* Tab 2: All Contacts */}
         {activeTab === 2 && (
           <div className="space-y-4">
+            {/* Enrichment Summary Bar */}
+            {filteredContacts.length > 0 && (() => {
+              const enriched = filteredContacts.filter(c => (c.enrichment_status || '').toLowerCase() === 'enriched').length
+              const partial = filteredContacts.filter(c => (c.enrichment_status || '').toLowerCase() === 'partial').length
+              const notFound = filteredContacts.filter(c => ['not_found', 'not found'].includes((c.enrichment_status || '').toLowerCase())).length
+              const pending = filteredContacts.length - enriched - partial - notFound
+              return (
+                <div className="flex items-center gap-4 px-4 py-2.5 border border-border bg-card text-xs">
+                  <span className="text-muted-foreground uppercase tracking-widest font-serif">Enrichment</span>
+                  <span className="flex items-center gap-1.5 text-green-400"><FiCheck size={11} /> {enriched} enriched</span>
+                  {partial > 0 && <span className="flex items-center gap-1.5 text-amber-400"><FiMinus size={11} /> {partial} partial</span>}
+                  {notFound > 0 && <span className="flex items-center gap-1.5 text-muted-foreground"><FiX size={11} /> {notFound} not found</span>}
+                  {pending > 0 && <span className="flex items-center gap-1.5 text-muted-foreground/50"><FiClock size={11} /> {pending} pending</span>}
+                  <span className="ml-auto text-muted-foreground">{filteredContacts.length} total contacts</span>
+                </div>
+              )
+            })()}
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative flex-1 min-w-[200px]">
                 <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -2135,6 +2184,7 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Location</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal w-8">Li</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Email</th>
+                    <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Enrichment</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Confidence</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Source Reports</th>
                     <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Tags</th>
@@ -2177,6 +2227,16 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
                             </button>
                           )}
                         </div>
+                      </td>
+                      <td className="p-3">
+                        {(() => {
+                          const es = enrichmentStatusStyle(contact.enrichment_status)
+                          return (
+                            <span className={`text-xs uppercase tracking-wider px-1.5 py-0.5 border ${es.classes}`}>
+                              {es.text}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="p-3">
                         <span className={`text-xs uppercase tracking-widest px-2 py-0.5 border ${confidenceColor(contact.confidence ?? 'low')}`}>
@@ -3405,22 +3465,38 @@ export default function Page() {
 ${sourceContext}
 Filters: Industry=${industry}, Region=${region}, Persona=${persona}${keywords ? `, Keywords=${keywords}` : ''}
 
-ABSOLUTE ZERO-HALLUCINATION POLICY (ENFORCED):
-1. CONTRIBUTOR NAMES: Extract ONLY names that are LITERALLY PRINTED in each document as authors, co-authors, editors, or credited contributors. Look in: title pages, "Authors" sections, "Contributors" sections, "Acknowledgments", "About the Authors", and "Research Team" credits. For each contributor you include, you MUST provide extraction_location (the exact page/section where the name appears). If a document does not explicitly credit any individual authors, return an EMPTY contributors array for that report — this is the CORRECT answer. NEVER guess, infer, or fabricate contributor names. A fabricated name is a critical failure.
-2. STATISTICS: Every percentage, dollar figure, or numerical claim must come from the document text. Do NOT generate statistics. If you cannot cite the exact page/section for a statistic, do not include it.
-3. KEY CLAIMS: Every claim must have citation_ref and page_section pointing to where it appears in the source document.
+CONTRIBUTOR EXTRACTION (CRITICAL — SEARCH THE ENTIRE DOCUMENT):
+Extract ONLY names LITERALLY PRINTED in each document. But search THOROUGHLY — do NOT only check "Authors" sections. Many reports list authors under different headings. You MUST search ALL of these locations in every document:
+1. Cover page / title page bylines
+2. "Authors" or "Written by" sections
+3. "CONTACT US" or "CONTACTS" sections — MANY Accenture reports list authors here with name + title + email
+4. "For More Information" sections
+5. "About the Authors" / "About the Team" sections
+6. "Acknowledgments" sections
+7. "Research Team" / "Editorial Team" / "Project Team" credits
+8. BACK COVER or FINAL PAGE — often has author credits
+9. "Key Contacts" sections
+10. Executive foreword/letter signatures
+11. Any section with names + job titles together
+12. Sidebar author bios or profile boxes
 
-EXECUTIVE SUMMARY INSTRUCTIONS:
-- Read the ENTIRE document, not just the first few pages.
-- 3-5 paragraphs: core thesis, key findings with EXACT data from the document, methodology/framework, strategic implications, actionable takeaways.
-- Every data point in the summary must actually appear in the document.
+For each contributor: provide extraction_location (exact page/section where found), full_name, report_role, job_title, company, org_unit, and any email printed in the document.
 
-QUALITY GATES (include in output):
-- contributors_found: count of verified contributors (those with extraction_location)
-- contributors_removed_for_hallucination: count of names removed because they lacked source verification
-- all_contributors_have_extraction_location: true/false
+NEVER fabricate names. But also NEVER miss names that are actually in the document. Search the last 3 pages of every report.
 
-Return complete JSON: report_playbooks (one per report), personas, icp_summary, enriched_contacts, email_sequences, quality_gates. Process all reports. Partial results with verified data preferred over complete results with fabricated data. Never return text explanations.`
+ENRICHMENT: After extracting verified contributors, enrich each with work email and LinkedIn profile via Apollo. If Apollo doesn't have data, leave fields empty — never fabricate emails or LinkedIn URLs. Include enrichment_status for each contact.
+
+ZERO-HALLUCINATION RULES:
+- Every contributor name must be literally printed in the document with extraction_location
+- Every statistic must come from the document with page/section citation
+- Every key claim must have citation_ref and page_section
+- Never fabricate contact details — use Apollo data or leave empty
+
+EXECUTIVE SUMMARIES: Read the ENTIRE document. 3-5 paragraphs: core thesis, key findings with exact data, methodology, strategic implications, actionable takeaways.
+
+QUALITY GATES (include in output): total_reports_processed, contributors_found (verified), contributors_removed_for_hallucination, all_contributors_have_extraction_location, enrichment_success_rate.
+
+Return complete JSON: report_playbooks, personas, icp_summary, enriched_contacts, email_sequences, quality_gates. Never return text explanations.`
 
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
 
