@@ -391,6 +391,69 @@ const PIPELINE_STEPS = [
   'Generating Emails',
 ]
 
+// ─── JSON Boundary Extraction ────────────────────────────────────────────────
+function extractJsonFromText(text: string): string | null {
+  if (!text || typeof text !== 'string') return null
+
+  // Try markdown code block first
+  const codeBlock = text.match(/```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```/)
+  if (codeBlock) {
+    const inner = codeBlock[1].trim()
+    if (inner.startsWith('{') || inner.startsWith('[')) return inner
+  }
+
+  // Find the first { and its matching }
+  let start = -1
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{' || text[i] === '[') { start = i; break }
+  }
+  if (start === -1) return null
+
+  const openChar = text[start]
+  const closeChar = openChar === '{' ? '}' : ']'
+  let depth = 0
+  let inStr = false
+  let esc = false
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]
+    if (esc) { esc = false; continue }
+    if (ch === '\\' && inStr) { esc = true; continue }
+    if (ch === '"' && !esc) { inStr = !inStr; continue }
+    if (inStr) continue
+    if (ch === openChar) depth++
+    else if (ch === closeChar) {
+      depth--
+      if (depth === 0) return text.substring(start, i + 1)
+    }
+  }
+
+  // No matching close found — return from start anyway (may be truncated)
+  if (start !== -1) return text.substring(start)
+  return null
+}
+
+function tryParseJsonAggressive(text: string): any {
+  if (!text) return null
+  // Direct parse
+  try { return JSON.parse(text) } catch { /* continue */ }
+  // Extract boundary then parse
+  const extracted = extractJsonFromText(text)
+  if (extracted) {
+    try { return JSON.parse(extracted) } catch { /* continue */ }
+    // Try common fixes
+    try {
+      const fixed = extracted
+        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null')
+      return JSON.parse(fixed)
+    } catch { /* continue */ }
+  }
+  return null
+}
+
 // ─── Parse Agent Response ────────────────────────────────────────────────────
 function findPlaybookData(obj: any, depth: number = 0): any {
   if (!obj || typeof obj !== 'object' || depth > 8) return null
@@ -400,17 +463,28 @@ function findPlaybookData(obj: any, depth: number = 0): any {
   const searchKeys = ['result', 'response', 'data', 'output', 'content', 'message', 'text']
   for (const key of searchKeys) {
     if (obj[key] != null) {
-      // If it's a string, try to parse as JSON
+      // If it's a string, try to parse as JSON (with aggressive extraction)
       if (typeof obj[key] === 'string') {
-        try {
-          const parsed = JSON.parse(obj[key])
+        const parsed = tryParseJsonAggressive(obj[key])
+        if (parsed && typeof parsed === 'object') {
           const found = findPlaybookData(parsed, depth + 1)
           if (found) return found
-        } catch { /* not JSON string */ }
+          // Also check if parsed itself has report_playbooks
+          if (Array.isArray(parsed.report_playbooks)) return parsed
+        }
       } else if (typeof obj[key] === 'object') {
         const found = findPlaybookData(obj[key], depth + 1)
         if (found) return found
       }
+    }
+  }
+  // Also iterate ALL keys (not just known ones) looking for report_playbooks in nested objects
+  for (const key of Object.keys(obj)) {
+    if (searchKeys.includes(key)) continue // already checked
+    const val = obj[key]
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const found = findPlaybookData(val, depth + 1)
+      if (found) return found
     }
   }
   return null
@@ -468,33 +542,62 @@ function parseAgentResponse(result: any): PlaybookData | null {
     data = result
   }
 
-  // Strategy 7: For manager agents with file_output, check module_outputs.artifact_files
-  // The structured data might be in the artifact files as a JSON download
-  // In this case, we still need the response data — try result.response.result.text parsed as JSON
-  if (!data && result?.response?.result?.text) {
-    try {
-      const textParsed = JSON.parse(result.response.result.text)
+  // Strategy 7: result.response.result.text — use aggressive JSON extraction (handles prose, markdown, etc.)
+  if (!data && result?.response?.result?.text && typeof result.response.result.text === 'string') {
+    console.log('[parseAgentResponse] Strategy 7: Attempting aggressive extraction from text field, length:', result.response.result.text.length)
+    const textParsed = tryParseJsonAggressive(result.response.result.text)
+    if (textParsed && typeof textParsed === 'object') {
       data = findPlaybookData(textParsed) || (Array.isArray(textParsed?.report_playbooks) ? textParsed : null)
-    } catch { /* not JSON text */ }
+      if (data) console.log('[parseAgentResponse] Strategy 7 SUCCEEDED')
+    }
   }
 
   // Strategy 8: Try deeply nested result.response.response (double-wrapped)
   if (!data && result?.response?.response) {
     const inner = result.response.response
     if (typeof inner === 'string') {
-      try {
-        const parsed = JSON.parse(inner)
+      const parsed = tryParseJsonAggressive(inner)
+      if (parsed && typeof parsed === 'object') {
         data = findPlaybookData(parsed) || (Array.isArray(parsed?.report_playbooks) ? parsed : null)
-      } catch { /* not JSON */ }
+      }
     } else if (typeof inner === 'object') {
       data = findPlaybookData(inner) || (Array.isArray(inner?.report_playbooks) ? inner : null)
+    }
+  }
+
+  // Strategy 9: Aggressive JSON extraction from raw_response using boundary detection
+  if (!data && typeof result?.raw_response === 'string' && result.raw_response.length > 100) {
+    console.log('[parseAgentResponse] Strategy 9: Aggressive boundary extraction from raw_response, length:', result.raw_response.length)
+    const rawParsed = tryParseJsonAggressive(result.raw_response)
+    if (rawParsed && typeof rawParsed === 'object') {
+      data = findPlaybookData(rawParsed) || (Array.isArray(rawParsed?.report_playbooks) ? rawParsed : null)
+      if (data) console.log('[parseAgentResponse] Strategy 9 SUCCEEDED from raw_response')
+    }
+  }
+
+  // Strategy 10: Try result.response.message with aggressive extraction
+  if (!data && result?.response?.message && typeof result.response.message === 'string' && result.response.message.length > 100) {
+    console.log('[parseAgentResponse] Strategy 10: Aggressive extraction from response.message')
+    const msgParsed = tryParseJsonAggressive(result.response.message)
+    if (msgParsed && typeof msgParsed === 'object') {
+      data = findPlaybookData(msgParsed) || (Array.isArray(msgParsed?.report_playbooks) ? msgParsed : null)
+      if (data) console.log('[parseAgentResponse] Strategy 10 SUCCEEDED')
     }
   }
 
   if (!data) {
     console.log('[parseAgentResponse] FAILED - no data found. Full result keys:', result ? Object.keys(result) : 'null')
     if (result?.response) console.log('[parseAgentResponse] response keys:', Object.keys(result.response))
-    if (result?.response?.result) console.log('[parseAgentResponse] result.response.result type:', typeof result.response.result, 'value preview:', JSON.stringify(result.response.result).substring(0, 500))
+    if (result?.response?.result) {
+      console.log('[parseAgentResponse] result.response.result type:', typeof result.response.result, 'value preview:', JSON.stringify(result.response.result).substring(0, 500))
+      // Log what the text field actually contains
+      if (result.response.result.text) {
+        const textPreview = String(result.response.result.text)
+        console.log('[parseAgentResponse] text field length:', textPreview.length)
+        console.log('[parseAgentResponse] text field first 300 chars:', textPreview.substring(0, 300))
+        console.log('[parseAgentResponse] text field last 300 chars:', textPreview.substring(Math.max(0, textPreview.length - 300)))
+      }
+    }
     if (result?.raw_response) console.log('[parseAgentResponse] raw_response preview:', String(result.raw_response).substring(0, 500))
     return null
   }
@@ -756,6 +859,56 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
   const [region, setRegion] = useState(showSample ? 'NA' : 'Global')
   const [persona, setPersona] = useState(showSample ? 'C-Suite' : 'All')
   const [keywords, setKeywords] = useState(showSample ? 'cloud migration, AI platforms, cost optimization' : '')
+  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; status: 'uploading' | 'trained' | 'failed'; error?: string }[]>([])
+  const [isDragOver, setIsDragOver] = useState(false)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const validFiles = fileArray.filter(f =>
+      f.type === 'application/pdf' ||
+      f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      f.type === 'text/plain' ||
+      f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.txt')
+    )
+    if (validFiles.length === 0) return
+
+    // Add files to the list as uploading
+    const newEntries = validFiles.map(f => ({ name: f.name, status: 'uploading' as const }))
+    setUploadedFiles(prev => [...prev, ...newEntries])
+
+    // Upload each file to the KB
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i]
+      try {
+        const result = await uploadAndTrainDocument(RAG_ID, file)
+        setUploadedFiles(prev => prev.map(entry =>
+          entry.name === file.name && entry.status === 'uploading'
+            ? { ...entry, status: result.success ? 'trained' : 'failed', error: result.error }
+            : entry
+        ))
+      } catch (err: any) {
+        setUploadedFiles(prev => prev.map(entry =>
+          entry.name === file.name && entry.status === 'uploading'
+            ? { ...entry, status: 'failed', error: err?.message || 'Upload failed' }
+            : entry
+        ))
+      }
+    }
+    if (uploadInputRef.current) uploadInputRef.current.value = ''
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    if (e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files)
+    }
+  }
+
+  const removeUploadedFile = (name: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.name !== name))
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -776,6 +929,66 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
               rows={4}
               className="w-full bg-secondary/50 border border-border text-foreground text-sm p-3 focus:outline-none focus:border-primary transition-colors resize-none placeholder:text-muted-foreground/50"
             />
+          </div>
+
+          {/* File Upload Section */}
+          <div>
+            <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-2">Upload Reports</label>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+              className={`border border-dashed p-4 text-center transition-colors cursor-pointer ${isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+              onClick={() => uploadInputRef.current?.click()}
+            >
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept=".pdf,.docx,.txt"
+                multiple
+                onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                className="hidden"
+              />
+              <FiUpload className="mx-auto text-muted-foreground mb-2" size={20} />
+              <p className="text-xs text-muted-foreground tracking-wider">
+                Drop PDF, DOCX, or TXT files here or <span className="text-primary">browse</span>
+              </p>
+              <p className="text-xs text-muted-foreground/50 mt-1">Files are uploaded to the knowledge base for agent processing</p>
+            </div>
+
+            {uploadedFiles.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {uploadedFiles.map((file, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1.5 px-3 bg-secondary/30 border border-border/50">
+                    <div className="flex items-center gap-2">
+                      <FiFileText size={12} className="text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs text-foreground/80 truncate max-w-[200px]">{file.name}</span>
+                      {file.status === 'uploading' && (
+                        <span className="flex items-center gap-1 text-xs text-primary">
+                          <FiLoader className="animate-spin" size={10} /> Training
+                        </span>
+                      )}
+                      {file.status === 'trained' && (
+                        <span className="flex items-center gap-1 text-xs text-green-400">
+                          <FiCheck size={10} /> Trained
+                        </span>
+                      )}
+                      {file.status === 'failed' && (
+                        <span className="flex items-center gap-1 text-xs text-destructive" title={file.error}>
+                          <FiAlertTriangle size={10} /> Failed
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeUploadedFile(file.name) }}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -2138,9 +2351,15 @@ The report_playbooks array MUST have one entry per report. Do NOT truncate or li
           const keys = Object.keys(result.response.result)
           if (keys.length > 0) diag.push(`Response keys: ${keys.join(', ')}`)
           else diag.push('Response result was empty object.')
+          // Show text field preview for debugging
+          if (result.response.result.text && typeof result.response.result.text === 'string') {
+            const t = result.response.result.text
+            diag.push(`Text field length: ${t.length} chars.`)
+            diag.push(`Text starts with: "${t.substring(0, 150)}..."`)
+          }
         }
-        if (result?.response?.message && !result?.response?.result) {
-          diag.push(`Message: ${String(result.response.message).substring(0, 200)}`)
+        if (result?.response?.message && typeof result.response.message === 'string') {
+          diag.push(`Message preview: ${result.response.message.substring(0, 200)}`)
         }
         setErrorMsg(diag.join(' '))
       }

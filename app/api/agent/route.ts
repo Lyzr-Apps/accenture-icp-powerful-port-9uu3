@@ -27,6 +27,57 @@ interface NormalizedAgentResponse {
   }
 }
 
+/**
+ * Find the outermost JSON object/array boundary in a string.
+ * Handles markdown code blocks, prose mixed with JSON, etc.
+ */
+function findJsonBoundary(text: string): string | null {
+  if (!text) return null
+
+  // First, try to extract from markdown code blocks
+  const codeBlockMatch = text.match(/```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```/)
+  if (codeBlockMatch) {
+    const inner = codeBlockMatch[1].trim()
+    if (inner.startsWith('{') || inner.startsWith('[')) {
+      return inner
+    }
+  }
+
+  // Find the first { or [ and its matching closing bracket
+  let start = -1
+  let openChar = ''
+  let closeChar = ''
+
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { start = i; openChar = '{'; closeChar = '}'; break }
+    if (text[i] === '[') { start = i; openChar = '['; closeChar = ']'; break }
+  }
+
+  if (start === -1) return null
+
+  let depth = 0
+  let inString = false
+  let escapeNext = false
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]
+    if (escapeNext) { escapeNext = false; continue }
+    if (ch === '\\' && inString) { escapeNext = true; continue }
+    if (ch === '"' && !escapeNext) { inString = !inString; continue }
+    if (inString) continue
+    if (ch === openChar) depth++
+    else if (ch === closeChar) {
+      depth--
+      if (depth === 0) return text.substring(start, i + 1)
+    }
+  }
+
+  // If we found an opening but no matching close, return from start to end
+  // (the JSON may be truncated but still parseable in parts)
+  if (start !== -1) return text.substring(start)
+  return null
+}
+
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0
@@ -308,11 +359,41 @@ async function pollTask(task_id: string) {
   console.log('[pollTask] agentResponseRaw type:', typeof agentResponseRaw)
   console.log('[pollTask] agentResponseRaw preview:', JSON.stringify(agentResponseRaw).substring(0, 1000))
 
-  const parsed = parseLLMJson(agentResponseRaw)
+  let parsed = parseLLMJson(agentResponseRaw)
 
   console.log('[pollTask] parseLLMJson result type:', typeof parsed)
   console.log('[pollTask] parseLLMJson result keys:', parsed && typeof parsed === 'object' ? Object.keys(parsed) : 'not-object')
   console.log('[pollTask] has report_playbooks:', parsed && typeof parsed === 'object' && Array.isArray(parsed.report_playbooks))
+
+  // If parseLLMJson failed (returned {success:false, data:null}) and agentResponseRaw is a string,
+  // try harder: extract JSON from inside the string using boundary detection
+  if (parsed && typeof parsed === 'object' && parsed.success === false && parsed.data === null) {
+    const rawStr = typeof agentResponseRaw === 'string' ? agentResponseRaw : JSON.stringify(agentResponseRaw)
+    console.log('[pollTask] parseLLMJson failed. Attempting boundary extraction on raw string, length:', rawStr.length)
+
+    const extractedJson = findJsonBoundary(rawStr)
+    if (extractedJson) {
+      try {
+        const directParsed = JSON.parse(extractedJson)
+        console.log('[pollTask] Boundary extraction succeeded. Keys:', Object.keys(directParsed))
+        parsed = directParsed
+      } catch {
+        // Try with common fixes
+        try {
+          const fixed = extractedJson
+            .replace(/,(\s*[}\]])/g, '$1')  // trailing commas
+            .replace(/\bTrue\b/g, 'true')
+            .replace(/\bFalse\b/g, 'false')
+            .replace(/\bNone\b/g, 'null')
+          const fixedParsed = JSON.parse(fixed)
+          console.log('[pollTask] Boundary extraction with fixes succeeded. Keys:', Object.keys(fixedParsed))
+          parsed = fixedParsed
+        } catch (e2) {
+          console.log('[pollTask] Boundary extraction also failed:', (e2 as Error).message?.substring(0, 200))
+        }
+      }
+    }
+  }
 
   const toNormalize =
     parsed && typeof parsed === 'object' && parsed.success === false && parsed.data === null
