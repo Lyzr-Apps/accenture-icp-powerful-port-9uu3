@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { callAIAgent } from '@/lib/aiAgent'
 import { useRAGKnowledgeBase, uploadAndTrainDocument, getDocuments, deleteDocuments } from '@/lib/ragKnowledgeBase'
-import { FiHome, FiBook, FiUsers, FiSettings, FiChevronDown, FiChevronRight, FiCheck, FiAlertTriangle, FiDownload, FiCopy, FiExternalLink, FiSearch, FiUpload, FiTrash2, FiMail, FiUser, FiFileText, FiBookOpen, FiX, FiMenu, FiLoader, FiTarget, FiActivity, FiShield, FiClock, FiZap, FiGlobe, FiDatabase, FiLayers, FiTag, FiHash } from 'react-icons/fi'
+import { FiHome, FiBook, FiUsers, FiSettings, FiChevronDown, FiChevronRight, FiCheck, FiAlertTriangle, FiDownload, FiCopy, FiExternalLink, FiSearch, FiUpload, FiTrash2, FiMail, FiUser, FiFileText, FiBookOpen, FiX, FiMenu, FiLoader, FiTarget, FiActivity, FiShield, FiClock, FiZap, FiGlobe, FiDatabase, FiLayers, FiTag, FiHash, FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiVideo, FiSave, FiEdit, FiMinus, FiSend } from 'react-icons/fi'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MANAGER_AGENT_ID = '699ee645c0628a36907949b8'
 const RAG_ID = '699ee578c9ac7bb71c08b9cc'
+const EMAIL_AGENT_ID = '699ee5d18c35cfd5b5590bf0'
 
 // ─── TypeScript Interfaces ───────────────────────────────────────────────────
 interface ReportContributor {
@@ -109,6 +110,7 @@ interface PlaybookData {
   total_contacts: number
   total_reports: number
   artifact_files?: { file_url: string; name?: string; format_type?: string }[]
+  display_name?: string
 }
 
 type ActiveSection = 'dashboard' | 'playbooks' | 'contacts' | 'settings'
@@ -747,6 +749,264 @@ function collectAllTopicTags(playbook: PlaybookData): string[] {
   return Array.from(tagSet).sort()
 }
 
+// ─── Playbook Display Name Helper ─────────────────────────────────────────────
+function getPlaybookDisplayName(pb: PlaybookData): string {
+  if (pb.display_name) return pb.display_name
+  const reports = Array.isArray(pb?.report_playbooks) ? pb.report_playbooks : []
+  if (reports.length === 0) return pb.playbook_id || 'Untitled Playbook'
+  const firstName = reports[0]?.report_title || 'Untitled Report'
+  if (reports.length === 1) return firstName
+  return `${firstName} + ${reports.length - 1} more report${reports.length - 1 > 1 ? 's' : ''}`
+}
+
+// ─── Rich Email Editor Component ──────────────────────────────────────────────
+function RichEmailEditor({ initialBody, onSave, onCancel }: {
+  initialBody: string
+  onSave: (html: string) => void
+  onCancel: () => void
+}) {
+  const editorRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (editorRef.current) {
+      // Convert newlines to <br> for initial content if it looks like plain text
+      const hasHtml = /<[a-z][\s\S]*>/i.test(initialBody)
+      editorRef.current.innerHTML = hasHtml ? initialBody : initialBody.replace(/\n/g, '<br>')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const execCmd = (command: string, value?: string) => {
+    document.execCommand(command, false, value)
+    editorRef.current?.focus()
+  }
+
+  const handleInsertLink = () => {
+    const url = prompt('Enter URL:')
+    if (url) {
+      const sel = window.getSelection()
+      if (sel && sel.toString().length > 0) {
+        execCmd('createLink', url)
+      } else {
+        const linkText = prompt('Enter link text:', url) || url
+        execCmd('insertHTML', `<a href="${url}" style="color:#c9a84c;text-decoration:underline" target="_blank">${linkText}</a>`)
+      }
+    }
+  }
+
+  const handleInsertImage = () => {
+    const url = prompt('Enter image URL:')
+    if (url) {
+      execCmd('insertHTML', `<img src="${url}" alt="Inserted image" style="max-width:100%;height:auto;margin:8px 0;display:block" />`)
+    }
+  }
+
+  const handleInsertVideo = () => {
+    const url = prompt('Enter video URL (YouTube, Vimeo, or direct):')
+    if (url) {
+      // Try to create an embedded link with a play-button style thumbnail
+      execCmd('insertHTML', `<div style="margin:8px 0;padding:12px;border:1px solid rgba(255,255,255,0.1);display:inline-block"><a href="${url}" target="_blank" style="color:#c9a84c;text-decoration:none;display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3)">&#9654;</span> Watch Video</a></div>`)
+    }
+  }
+
+  const handleSave = () => {
+    if (editorRef.current) {
+      onSave(editorRef.current.innerHTML)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 flex-wrap border border-border bg-secondary/20 p-1.5">
+        <button onClick={() => execCmd('bold')} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Bold"><FiBold size={14} /></button>
+        <button onClick={() => execCmd('italic')} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Italic"><FiItalic size={14} /></button>
+        <button onClick={() => execCmd('underline')} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Underline"><FiUnderline size={14} /></button>
+        <div className="w-px h-5 bg-border mx-1" />
+        <button onClick={handleInsertLink} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Insert Link"><FiLink size={14} /></button>
+        <button onClick={handleInsertImage} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Insert Image"><FiImage size={14} /></button>
+        <button onClick={handleInsertVideo} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Insert Video"><FiVideo size={14} /></button>
+        <button onClick={() => execCmd('insertHorizontalRule')} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Insert Divider"><FiMinus size={14} /></button>
+      </div>
+      {/* Editable Area */}
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        className="min-h-[200px] max-h-[400px] overflow-y-auto bg-secondary/30 border border-border p-4 text-sm leading-relaxed text-foreground/80 focus:outline-none focus:border-primary transition-colors"
+        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+      />
+      {/* Actions */}
+      <div className="flex items-center gap-2 justify-end">
+        <button onClick={onCancel} className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-muted-foreground text-xs tracking-widest uppercase hover:text-foreground transition-colors">
+          <FiX size={12} /> Cancel
+        </button>
+        <button onClick={handleSave} className="flex items-center gap-1.5 px-3 py-1.5 border border-primary text-primary text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+          <FiSave size={12} /> Save
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Gmail Send Panel Component ───────────────────────────────────────────────
+function GmailSendPanel({ email, contactEmail, contactName, onClose }: {
+  email: EmailVariant
+  contactEmail: string
+  contactName: string
+  onClose: () => void
+}) {
+  const [formData, setFormData] = useState({
+    to: contactEmail,
+    subject: email?.subject_line ?? '',
+    body: email?.body ?? '',
+    cc: '',
+    bcc: '',
+  })
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const handleSend = async () => {
+    if (!formData.to || !formData.subject || !formData.body) return
+    setSending(true)
+    setFeedback(null)
+    try {
+      let message = `Send this email via Gmail. recipient_email: ${formData.to}, subject: ${formData.subject}, body: ${formData.body}`
+      if (formData.cc) message += `, cc: ${formData.cc}`
+      if (formData.bcc) message += `, bcc: ${formData.bcc}`
+      const result = await callAIAgent(message, EMAIL_AGENT_ID)
+      if (result?.success) {
+        setFeedback({ type: 'success', message: `Email sent to ${formData.to} successfully.` })
+      } else {
+        setFeedback({ type: 'error', message: result?.error || 'Failed to send email. Please try again.' })
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err?.message || 'An error occurred while sending.' })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 border border-primary/20 bg-secondary/20 p-4 space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2 text-xs tracking-widest uppercase text-primary">
+          <FiSend size={12} />
+          <span>Send via Gmail</span>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
+          <FiX size={14} />
+        </button>
+      </div>
+      <div>
+        <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Recipient</label>
+        <input type="email" value={formData.to} onChange={(e) => setFormData(prev => ({ ...prev, to: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" placeholder="recipient@example.com" />
+      </div>
+      <div>
+        <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Subject</label>
+        <input type="text" value={formData.subject} onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" />
+      </div>
+      <div>
+        <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Body</label>
+        <textarea value={formData.body} onChange={(e) => setFormData(prev => ({ ...prev, body: e.target.value }))} rows={5} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary resize-none" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">CC (optional)</label>
+          <input type="email" value={formData.cc} onChange={(e) => setFormData(prev => ({ ...prev, cc: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" placeholder="cc@example.com" />
+        </div>
+        <div>
+          <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">BCC (optional)</label>
+          <input type="email" value={formData.bcc} onChange={(e) => setFormData(prev => ({ ...prev, bcc: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" placeholder="bcc@example.com" />
+        </div>
+      </div>
+      {feedback && (
+        <div className={`text-xs p-2.5 border ${feedback.type === 'success' ? 'text-green-400 border-green-400/20 bg-green-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'}`}>
+          {feedback.message}
+        </div>
+      )}
+      <button onClick={handleSend} disabled={sending || !formData.to || !formData.subject || !formData.body} className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground text-xs tracking-widest uppercase hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
+        {sending ? <><FiLoader className="animate-spin" size={12} /> Sending</> : <><FiSend size={12} /> Send Email</>}
+      </button>
+    </div>
+  )
+}
+
+// ─── Instantly Add to Campaign Panel Component ────────────────────────────────
+function InstantlySendPanel({ contactEmail, contactName, onClose }: {
+  contactEmail: string
+  contactName: string
+  onClose: () => void
+}) {
+  const nameParts = (contactName || '').split(' ')
+  const [formData, setFormData] = useState({
+    email: contactEmail,
+    campaignName: '',
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' ') || '',
+  })
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const handleAdd = async () => {
+    if (!formData.email || !formData.campaignName) return
+    setSending(true)
+    setFeedback(null)
+    try {
+      const message = `Add this lead to Instantly campaign. email: ${formData.email}, campaign_name: ${formData.campaignName}, first_name: ${formData.firstName}, last_name: ${formData.lastName}`
+      const result = await callAIAgent(message, EMAIL_AGENT_ID)
+      if (result?.success) {
+        setFeedback({ type: 'success', message: `Lead ${formData.email} added to campaign "${formData.campaignName}" successfully.` })
+      } else {
+        setFeedback({ type: 'error', message: result?.error || 'Failed to add lead. Please try again.' })
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err?.message || 'An error occurred.' })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 border border-amber-400/20 bg-secondary/20 p-4 space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2 text-xs tracking-widest uppercase text-amber-400">
+          <FiZap size={12} />
+          <span>Add to Instantly Campaign</span>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
+          <FiX size={14} />
+        </button>
+      </div>
+      <div>
+        <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Contact Email</label>
+        <input type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" />
+      </div>
+      <div>
+        <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Campaign Name</label>
+        <input type="text" value={formData.campaignName} onChange={(e) => setFormData(prev => ({ ...prev, campaignName: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" placeholder="e.g. Q1 CTO Outreach" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">First Name</label>
+          <input type="text" value={formData.firstName} onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Last Name</label>
+          <input type="text" value={formData.lastName} onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2.5 focus:outline-none focus:border-primary" />
+        </div>
+      </div>
+      {feedback && (
+        <div className={`text-xs p-2.5 border ${feedback.type === 'success' ? 'text-green-400 border-green-400/20 bg-green-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'}`}>
+          {feedback.message}
+        </div>
+      )}
+      <button onClick={handleAdd} disabled={sending || !formData.email || !formData.campaignName} className="w-full flex items-center justify-center gap-2 py-2.5 border border-amber-400 text-amber-400 text-xs tracking-widest uppercase hover:bg-amber-400/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        {sending ? <><FiLoader className="animate-spin" size={12} /> Adding</> : <><FiZap size={12} /> Add to Campaign</>}
+      </button>
+    </div>
+  )
+}
+
 // ─── ErrorBoundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -1117,7 +1377,7 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
                     className="w-full text-left p-4"
                   >
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="text-sm font-serif tracking-wider group-hover:text-primary transition-colors line-clamp-2">{pb.playbook_id || 'Untitled Playbook'}</h4>
+                      <h4 className="text-sm font-serif tracking-wider group-hover:text-primary transition-colors line-clamp-2">{getPlaybookDisplayName(pb)}</h4>
                       <span className={`text-xs tracking-widest uppercase px-2 py-0.5 border flex-shrink-0 ${pb.pipeline_status === 'completed' ? 'text-green-400 border-green-400/30' : 'text-amber-400 border-amber-400/30'}`}>
                         {pb.pipeline_status || 'Unknown'}
                       </span>
@@ -1350,11 +1610,12 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId }: {
 }
 
 // ─── Playbook Results Screen ─────────────────────────────────────────────────
-function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybook }: {
+function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybook, onUpdatePlaybook }: {
   playbook: PlaybookData
   copiedId: string
   setCopiedId: (id: string) => void
   onDeletePlaybook: () => void
+  onUpdatePlaybook: (updated: PlaybookData) => void
 }) {
   const [activeTab, setActiveTab] = useState(0)
   const [selectedTopic, setSelectedTopic] = useState('All')
@@ -1363,6 +1624,55 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
   const [contactFilter, setContactFilter] = useState('')
   const [confidenceFilter, setConfidenceFilter] = useState('all')
   const [selectedContacts, setSelectedContacts] = useState<Set<number>>(new Set())
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(getPlaybookDisplayName(playbook))
+  const [editingEmailId, setEditingEmailId] = useState<string | null>(null)
+  const [gmailPanelId, setGmailPanelId] = useState<string | null>(null)
+  const [instantlyPanelId, setInstantlyPanelId] = useState<string | null>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setNameValue(getPlaybookDisplayName(playbook))
+  }, [playbook])
+
+  useEffect(() => {
+    if (editingName && nameInputRef.current) {
+      nameInputRef.current.focus()
+      nameInputRef.current.select()
+    }
+  }, [editingName])
+
+  const handleNameSave = () => {
+    const trimmed = nameValue.trim()
+    if (trimmed && trimmed !== getPlaybookDisplayName(playbook)) {
+      const updated = { ...playbook, display_name: trimmed }
+      onUpdatePlaybook(updated)
+    }
+    setEditingName(false)
+  }
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleNameSave()
+    if (e.key === 'Escape') { setNameValue(getPlaybookDisplayName(playbook)); setEditingName(false) }
+  }
+
+  // Find contact email from sequence for send panels
+  const findContactEmail = (contactName: string): string => {
+    const contacts = Array.isArray(playbook?.enriched_contacts) ? playbook.enriched_contacts : []
+    const match = contacts.find(c => c.full_name === contactName)
+    return match?.email || ''
+  }
+
+  const handleEmailBodySave = (sIdx: number, eIdx: number, html: string) => {
+    const updated = { ...playbook }
+    if (Array.isArray(updated.email_sequences) && updated.email_sequences[sIdx] && Array.isArray(updated.email_sequences[sIdx].emails) && updated.email_sequences[sIdx].emails[eIdx]) {
+      updated.email_sequences = [...updated.email_sequences]
+      updated.email_sequences[sIdx] = { ...updated.email_sequences[sIdx], emails: [...updated.email_sequences[sIdx].emails] }
+      updated.email_sequences[sIdx].emails[eIdx] = { ...updated.email_sequences[sIdx].emails[eIdx], body: html }
+      onUpdatePlaybook(updated)
+    }
+    setEditingEmailId(null)
+  }
 
   const tabs = ['Reports & Contributors', 'Personas & ICPs', 'All Contacts', 'ABM Emails']
 
@@ -1402,7 +1712,31 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="font-serif text-2xl tracking-wider">Playbook Results</h2>
+          {editingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={handleNameSave}
+                onKeyDown={handleNameKeyDown}
+                className="font-serif text-2xl tracking-wider bg-secondary/50 border border-primary text-foreground px-2 py-1 focus:outline-none min-w-[300px]"
+              />
+              <button onClick={handleNameSave} className="text-primary hover:text-primary/80 transition-colors p-1" title="Save name">
+                <FiCheck size={18} />
+              </button>
+            </div>
+          ) : (
+            <h2
+              className="font-serif text-2xl tracking-wider cursor-pointer group flex items-center gap-2 hover:text-primary transition-colors"
+              onClick={() => setEditingName(true)}
+              title="Click to rename playbook"
+            >
+              {getPlaybookDisplayName(playbook)}
+              <FiEdit size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </h2>
+          )}
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground tracking-wider">
             <span>{playbook?.playbook_id || ''}</span>
             <span>{playbook?.generation_date ? new Date(playbook.generation_date).toLocaleDateString() : ''}</span>
@@ -1733,67 +2067,134 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
         {/* Tab 3: ABM Emails */}
         {activeTab === 3 && (
           <div className="space-y-6">
-            {Array.isArray(playbook?.email_sequences) && playbook.email_sequences.map((seq, sIdx) => (
-              <div key={sIdx} className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <FiMail className="text-primary" size={14} />
-                  <h3 className="font-serif text-sm tracking-wider">{seq.contact_name ?? 'Unknown Contact'}</h3>
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground border border-border px-2 py-0.5">{seq.persona_tag ?? ''}</span>
-                </div>
-                <div className="space-y-2">
-                  {Array.isArray(seq.emails) && seq.emails.map((email, eIdx) => {
-                    const emailId = `${sIdx}-${eIdx}`
-                    const isExpanded = expandedEmail === emailId
-                    return (
-                      <div key={eIdx} className="bg-card border border-border hover:border-primary/20 transition-colors">
-                        <button
-                          onClick={() => setExpandedEmail(isExpanded ? null : emailId)}
-                          className="w-full flex items-center justify-between p-4 text-left"
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="text-xs uppercase tracking-widest text-primary border border-primary/20 px-2 py-0.5 flex-shrink-0">{email.variant_type ?? ''}</span>
-                            <span className="text-sm truncate">{email.subject_line ?? ''}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                const fullEmail = `Subject: ${email.subject_line ?? ''}\n\n${email.body ?? ''}\n\nCTA: ${email.cta ?? ''}\n\n${email.compliance_footer ?? ''}`
-                                copyToClipboard(fullEmail, setCopiedId, emailId)
-                              }}
-                              className="text-muted-foreground hover:text-primary transition-colors p-1"
-                            >
-                              {copiedId === emailId ? <FiCheck size={14} className="text-green-400" /> : <FiCopy size={14} />}
-                            </button>
-                            {isExpanded ? <FiChevronDown size={14} className="text-muted-foreground" /> : <FiChevronRight size={14} className="text-muted-foreground" />}
-                          </div>
-                        </button>
-                        {isExpanded && (
-                          <div className="p-4 pt-0 border-t border-border/50 space-y-3">
-                            <div className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">{email.body ?? ''}</div>
-                            <div className="bg-primary/5 border border-primary/20 p-3">
-                              <label className="text-xs tracking-widest uppercase text-primary block mb-1">Call to Action</label>
-                              <p className="text-sm">{email.cta ?? ''}</p>
+            {Array.isArray(playbook?.email_sequences) && playbook.email_sequences.map((seq, sIdx) => {
+              const seqContactEmail = findContactEmail(seq.contact_name ?? '')
+              return (
+                <div key={sIdx} className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <FiMail className="text-primary" size={14} />
+                    <h3 className="font-serif text-sm tracking-wider">{seq.contact_name ?? 'Unknown Contact'}</h3>
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground border border-border px-2 py-0.5">{seq.persona_tag ?? ''}</span>
+                    {seqContactEmail && <span className="text-xs text-muted-foreground/60">{seqContactEmail}</span>}
+                  </div>
+                  <div className="space-y-2">
+                    {Array.isArray(seq.emails) && seq.emails.map((email, eIdx) => {
+                      const emailId = `${sIdx}-${eIdx}`
+                      const isExpanded = expandedEmail === emailId
+                      const isEditing = editingEmailId === emailId
+                      const showGmail = gmailPanelId === emailId
+                      const showInstantly = instantlyPanelId === emailId
+                      const hasHtmlBody = /<[a-z][\s\S]*>/i.test(email.body ?? '')
+                      return (
+                        <div key={eIdx} className="bg-card border border-border hover:border-primary/20 transition-colors">
+                          <button
+                            onClick={() => setExpandedEmail(isExpanded ? null : emailId)}
+                            className="w-full flex items-center justify-between p-4 text-left"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <span className="text-xs uppercase tracking-widest text-primary border border-primary/20 px-2 py-0.5 flex-shrink-0">{email.variant_type ?? ''}</span>
+                              <span className="text-sm truncate">{email.subject_line ?? ''}</span>
                             </div>
-                            {Array.isArray(email.cited_claims) && email.cited_claims.length > 0 && (
-                              <div>
-                                <label className="text-xs tracking-widest uppercase text-muted-foreground/60 block mb-1">Cited Claims</label>
-                                <div className="flex flex-wrap gap-1">
-                                  {email.cited_claims.map((cc, i) => (
-                                    <span key={i} className="text-xs border border-border px-2 py-0.5 text-foreground/70">{cc}</span>
-                                  ))}
-                                </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const fullEmail = `Subject: ${email.subject_line ?? ''}\n\n${email.body ?? ''}\n\nCTA: ${email.cta ?? ''}\n\n${email.compliance_footer ?? ''}`
+                                  copyToClipboard(fullEmail, setCopiedId, emailId)
+                                }}
+                                className="text-muted-foreground hover:text-primary transition-colors p-1"
+                                title="Copy email"
+                              >
+                                {copiedId === emailId ? <FiCheck size={14} className="text-green-400" /> : <FiCopy size={14} />}
+                              </button>
+                              {isExpanded ? <FiChevronDown size={14} className="text-muted-foreground" /> : <FiChevronRight size={14} className="text-muted-foreground" />}
+                            </div>
+                          </button>
+                          {isExpanded && (
+                            <div className="p-4 pt-0 border-t border-border/50 space-y-3">
+                              {/* Email Body: Edit mode or View mode */}
+                              {isEditing ? (
+                                <RichEmailEditor
+                                  initialBody={email.body ?? ''}
+                                  onSave={(html) => handleEmailBodySave(sIdx, eIdx, html)}
+                                  onCancel={() => setEditingEmailId(null)}
+                                />
+                              ) : (
+                                <>
+                                  {hasHtmlBody ? (
+                                    <div className="text-sm leading-relaxed text-foreground/80" dangerouslySetInnerHTML={{ __html: email.body ?? '' }} />
+                                  ) : (
+                                    <div className="text-sm leading-relaxed text-foreground/80 whitespace-pre-line">{email.body ?? ''}</div>
+                                  )}
+                                </>
+                              )}
+                              <div className="bg-primary/5 border border-primary/20 p-3">
+                                <label className="text-xs tracking-widest uppercase text-primary block mb-1">Call to Action</label>
+                                <p className="text-sm">{email.cta ?? ''}</p>
                               </div>
-                            )}
-                            <div className="text-xs text-muted-foreground/50 border-t border-border/30 pt-2">{email.compliance_footer ?? ''}</div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                              {Array.isArray(email.cited_claims) && email.cited_claims.length > 0 && (
+                                <div>
+                                  <label className="text-xs tracking-widest uppercase text-muted-foreground/60 block mb-1">Cited Claims</label>
+                                  <div className="flex flex-wrap gap-1">
+                                    {email.cited_claims.map((cc, i) => (
+                                      <span key={i} className="text-xs border border-border px-2 py-0.5 text-foreground/70">{cc}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              <div className="text-xs text-muted-foreground/50 border-t border-border/30 pt-2">{email.compliance_footer ?? ''}</div>
+
+                              {/* Action Buttons Row */}
+                              {!isEditing && (
+                                <div className="flex items-center gap-2 border-t border-border/30 pt-3 flex-wrap">
+                                  <button
+                                    onClick={() => setEditingEmailId(emailId)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-muted-foreground text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-colors"
+                                  >
+                                    <FiEdit size={12} /> Edit
+                                  </button>
+                                  <button
+                                    onClick={() => { setGmailPanelId(showGmail ? null : emailId); setInstantlyPanelId(null) }}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 border text-xs tracking-widest uppercase transition-colors ${showGmail ? 'border-primary text-primary bg-primary/10' : 'border-border text-muted-foreground hover:border-primary hover:text-primary'}`}
+                                  >
+                                    <FiSend size={12} /> Send via Gmail
+                                  </button>
+                                  <button
+                                    onClick={() => { setInstantlyPanelId(showInstantly ? null : emailId); setGmailPanelId(null) }}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 border text-xs tracking-widest uppercase transition-colors ${showInstantly ? 'border-amber-400 text-amber-400 bg-amber-400/10' : 'border-border text-muted-foreground hover:border-amber-400 hover:text-amber-400'}`}
+                                  >
+                                    <FiZap size={12} /> Send via Instantly
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Gmail Send Panel */}
+                              {showGmail && (
+                                <GmailSendPanel
+                                  email={email}
+                                  contactEmail={seqContactEmail}
+                                  contactName={seq.contact_name ?? ''}
+                                  onClose={() => setGmailPanelId(null)}
+                                />
+                              )}
+
+                              {/* Instantly Send Panel */}
+                              {showInstantly && (
+                                <InstantlySendPanel
+                                  contactEmail={seqContactEmail}
+                                  contactName={seq.contact_name ?? ''}
+                                  onClose={() => setInstantlyPanelId(null)}
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {(!Array.isArray(playbook?.email_sequences) || playbook.email_sequences.length === 0) && (
               <div className="bg-card border border-border p-8 text-center text-muted-foreground">
                 <FiMail className="mx-auto mb-3" size={24} />
@@ -2392,6 +2793,19 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
     setActiveSection('dashboard')
   }, [playbookData, savedPlaybooks, handleDeletePlaybook])
 
+  const handleUpdatePlaybook = useCallback((updated: PlaybookData) => {
+    setPlaybookData(updated)
+    setSavedPlaybooks(prev => {
+      const newList = prev.map(p =>
+        p.playbook_id === updated.playbook_id && p.generation_date === updated.generation_date
+          ? updated
+          : p
+      )
+      try { localStorage.setItem('abm_playbooks', JSON.stringify(newList)) } catch { /* ignore */ }
+      return newList
+    })
+  }, [])
+
   // Aggregate all contacts from saved playbooks
   const allContacts: EnrichedContact[] = savedPlaybooks.reduce<EnrichedContact[]>((acc, pb) => {
     if (Array.isArray(pb?.enriched_contacts)) {
@@ -2471,6 +2885,7 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
                   copiedId={copiedId}
                   setCopiedId={setCopiedId}
                   onDeletePlaybook={handleDeleteCurrentPlaybook}
+                  onUpdatePlaybook={handleUpdatePlaybook}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-24">

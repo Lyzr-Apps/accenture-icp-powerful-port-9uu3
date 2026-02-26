@@ -152,7 +152,8 @@
         "temperature": 0.7,
         "top_p": 0.95,
         "has_kb": false,
-        "has_tools": false,
+        "has_tools": true,
+        "tools": ["GMAIL_SEND_EMAIL", "INSTANTLY_ADD_LEADS_TO_CAMPAIGN"],
         "file_output": false
       }
     ]
