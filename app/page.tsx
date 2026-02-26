@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { callAIAgent } from '@/lib/aiAgent'
 import { useRAGKnowledgeBase, uploadAndTrainDocument, getDocuments, deleteDocuments } from '@/lib/ragKnowledgeBase'
-import { FiHome, FiBook, FiUsers, FiSettings, FiChevronDown, FiChevronRight, FiCheck, FiAlertTriangle, FiDownload, FiCopy, FiExternalLink, FiSearch, FiUpload, FiTrash2, FiMail, FiUser, FiFileText, FiBookOpen, FiX, FiMenu, FiLoader, FiTarget, FiActivity, FiShield, FiClock, FiZap, FiGlobe, FiDatabase, FiLayers, FiTag, FiHash, FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiVideo, FiSave, FiEdit, FiMinus, FiSend } from 'react-icons/fi'
+import { FiHome, FiBook, FiUsers, FiSettings, FiChevronDown, FiChevronRight, FiCheck, FiAlertTriangle, FiDownload, FiCopy, FiExternalLink, FiSearch, FiUpload, FiTrash2, FiMail, FiUser, FiFileText, FiBookOpen, FiX, FiMenu, FiLoader, FiTarget, FiActivity, FiShield, FiClock, FiZap, FiGlobe, FiDatabase, FiLayers, FiTag, FiHash, FiBold, FiItalic, FiUnderline, FiLink, FiImage, FiVideo, FiSave, FiEdit, FiMinus, FiSend, FiFolder, FiArchive, FiUserCheck, FiFlag, FiPlus } from 'react-icons/fi'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MANAGER_AGENT_ID = '699ee645c0628a36907949b8'
@@ -113,7 +113,81 @@ interface PlaybookData {
   display_name?: string
 }
 
-type ActiveSection = 'dashboard' | 'playbooks' | 'contacts' | 'settings'
+type ActiveSection = 'dashboard' | 'playbooks' | 'contacts' | 'library' | 'settings'
+
+// ─── Known Contact Interface ─────────────────────────────────────────────────
+interface KnownContact {
+  full_name: string
+  email: string
+  company: string
+  job_title: string
+  status: string // e.g. 'Active', 'Prospect', 'Engaged'
+}
+
+// ─── Content Library Types ───────────────────────────────────────────────────
+type ContentFolder = 'accenture' | 'lyzr' | 'other'
+
+interface LibraryDocument {
+  name: string
+  folder: ContentFolder
+  uploadedAt: string
+  status: 'uploading' | 'trained' | 'failed'
+  error?: string
+}
+
+// ─── CSV Parsing Utility ─────────────────────────────────────────────────────
+function parseCSVToContacts(csvText: string): KnownContact[] {
+  const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+  if (lines.length < 2) return []
+  const headerLine = lines[0]
+  const headers = headerLine.split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
+
+  // Map header names to field indices
+  const nameIdx = headers.findIndex(h => h.includes('name') || h === 'full_name' || h === 'contact')
+  const emailIdx = headers.findIndex(h => h.includes('email') || h === 'e-mail')
+  const companyIdx = headers.findIndex(h => h.includes('company') || h.includes('org') || h.includes('account'))
+  const titleIdx = headers.findIndex(h => h.includes('title') || h.includes('role') || h.includes('position'))
+  const statusIdx = headers.findIndex(h => h.includes('status') || h.includes('stage'))
+
+  const contacts: KnownContact[] = []
+  for (let i = 1; i < lines.length; i++) {
+    // Simple CSV parse (handles quoted fields with commas)
+    const row: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQuotes = !inQuotes; continue }
+      if (ch === ',' && !inQuotes) { row.push(current.trim()); current = ''; continue }
+      current += ch
+    }
+    row.push(current.trim())
+
+    const name = nameIdx >= 0 ? row[nameIdx] || '' : ''
+    const email = emailIdx >= 0 ? row[emailIdx] || '' : ''
+    if (!name && !email) continue
+
+    contacts.push({
+      full_name: name,
+      email: email,
+      company: companyIdx >= 0 ? row[companyIdx] || '' : '',
+      job_title: titleIdx >= 0 ? row[titleIdx] || '' : '',
+      status: statusIdx >= 0 ? row[statusIdx] || 'Active' : 'Active',
+    })
+  }
+  return contacts
+}
+
+// ─── Known Contact Matching ──────────────────────────────────────────────────
+function isKnownContact(contact: { full_name?: string; email?: string }, knownContacts: KnownContact[]): KnownContact | null {
+  if (!knownContacts || knownContacts.length === 0) return null
+  for (const kc of knownContacts) {
+    // Match by email (case-insensitive)
+    if (kc.email && contact.email && kc.email.toLowerCase() === contact.email.toLowerCase()) return kc
+    // Match by full name (case-insensitive)
+    if (kc.full_name && contact.full_name && kc.full_name.toLowerCase() === contact.full_name.toLowerCase()) return kc
+  }
+  return null
+}
 
 // ─── Sample Data ─────────────────────────────────────────────────────────────
 const SAMPLE_PLAYBOOK: PlaybookData = {
@@ -1045,6 +1119,7 @@ function Sidebar({ activeSection, setActiveSection, collapsed, setCollapsed }: {
   const navItems: { id: ActiveSection; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <FiHome size={18} /> },
     { id: 'playbooks', label: 'Playbooks', icon: <FiBook size={18} /> },
+    { id: 'library', label: 'Library', icon: <FiArchive size={18} /> },
     { id: 'contacts', label: 'Contacts', icon: <FiUsers size={18} /> },
     { id: 'settings', label: 'Settings', icon: <FiSettings size={18} /> },
   ]
@@ -1442,12 +1517,14 @@ function DashboardScreen({ onGenerate, isGenerating, currentStep, stepTimes, sav
 }
 
 // ─── Report Card Component ───────────────────────────────────────────────────
-function ReportCard({ report, reportIndex, copiedId, setCopiedId }: {
+function ReportCard({ report, reportIndex, copiedId, setCopiedId, knownContacts }: {
   report: ReportPlaybook
   reportIndex: number
   copiedId: string
   setCopiedId: (id: string) => void
+  knownContacts?: KnownContact[]
 }) {
+  const kc = Array.isArray(knownContacts) ? knownContacts : []
   const [summaryExpanded, setSummaryExpanded] = useState(reportIndex === 0)
   const [claimsExpanded, setClaimsExpanded] = useState(false)
   const [contributorsExpanded, setContributorsExpanded] = useState(true)
@@ -1563,10 +1640,14 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId }: {
               <tbody>
                 {contributors.map((contrib, cIdx) => {
                   const emailCopyId = `report-${reportIndex}-contrib-${cIdx}`
+                  const contribKnown = isKnownContact({ full_name: contrib.full_name, email: contrib.email }, kc)
                   return (
-                    <tr key={cIdx} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                    <tr key={cIdx} className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${contribKnown ? 'bg-primary/5' : ''}`}>
                       <td className="p-2">
-                        <span className="font-serif tracking-wider">{contrib.full_name ?? ''}</span>
+                        <div className="flex items-center gap-1.5">
+                          {contribKnown && <FiFlag size={11} className="text-primary flex-shrink-0" title={`Known prospect: ${contribKnown.status}`} />}
+                          <span className="font-serif tracking-wider">{contrib.full_name ?? ''}</span>
+                        </div>
                       </td>
                       <td className="p-2">
                         <span className="text-xs uppercase tracking-wider text-primary border border-primary/20 px-1.5 py-0.5 bg-primary/5">{contrib.report_role ?? ''}</span>
@@ -1622,13 +1703,15 @@ function ReportCard({ report, reportIndex, copiedId, setCopiedId }: {
 }
 
 // ─── Playbook Results Screen ─────────────────────────────────────────────────
-function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybook, onUpdatePlaybook }: {
+function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybook, onUpdatePlaybook, knownContacts }: {
   playbook: PlaybookData
   copiedId: string
   setCopiedId: (id: string) => void
   onDeletePlaybook: () => void
   onUpdatePlaybook: (updated: PlaybookData) => void
+  knownContacts?: KnownContact[]
 }) {
+  const kc = Array.isArray(knownContacts) ? knownContacts : []
   const [activeTab, setActiveTab] = useState(0)
   const [selectedTopic, setSelectedTopic] = useState('All')
   const [expandedPersona, setExpandedPersona] = useState<number | null>(null)
@@ -1826,6 +1909,7 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
                     reportIndex={idx}
                     copiedId={copiedId}
                     setCopiedId={setCopiedId}
+                    knownContacts={kc}
                   />
                 ))}
               </div>
@@ -2012,13 +2096,16 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredContacts.map((contact, idx) => (
-                    <tr key={idx} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${contact.needs_review ? 'bg-amber-400/5' : ''}`}>
+                  {filteredContacts.map((contact, idx) => {
+                    const knownMatch = isKnownContact(contact, kc)
+                    return (
+                    <tr key={idx} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${knownMatch ? 'bg-primary/5' : contact.needs_review ? 'bg-amber-400/5' : ''}`}>
                       <td className="p-3">
                         <input type="checkbox" checked={selectedContacts.has(idx)} onChange={() => toggleContactSelection(idx)} className="accent-primary" />
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
+                          {knownMatch && <FiFlag size={12} className="text-primary flex-shrink-0" title={`Known prospect: ${knownMatch.status}`} />}
                           {contact.needs_review && <FiAlertTriangle size={12} className="text-amber-400 flex-shrink-0" />}
                           <span className="font-serif tracking-wider">{contact.full_name ?? ''}</span>
                         </div>
@@ -2066,7 +2153,7 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
               {filteredContacts.length === 0 && (
@@ -2256,22 +2343,27 @@ function PlaybookResultsScreen({ playbook, copiedId, setCopiedId, onDeletePlaybo
 }
 
 // ─── Contacts Library Screen ─────────────────────────────────────────────────
-function ContactsLibraryScreen({ allContacts, copiedId, setCopiedId }: {
+function ContactsLibraryScreen({ allContacts, knownContacts, copiedId, setCopiedId }: {
   allContacts: EnrichedContact[]
+  knownContacts?: KnownContact[]
   copiedId: string
   setCopiedId: (id: string) => void
 }) {
   const [search, setSearch] = useState('')
   const [confFilter, setConfFilter] = useState('all')
   const [reviewFilter, setReviewFilter] = useState(false)
+  const [knownFilter, setKnownFilter] = useState(false)
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
+
+  const kc = Array.isArray(knownContacts) ? knownContacts : []
 
   const filtered = allContacts.filter(c => {
     const matchSearch = !search || (c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.company?.toLowerCase().includes(search.toLowerCase()) || c.job_title?.toLowerCase().includes(search.toLowerCase()))
     const matchConf = confFilter === 'all' || c.confidence === confFilter
     const matchReview = !reviewFilter || c.needs_review
-    return matchSearch && matchConf && matchReview
+    const matchKnown = !knownFilter || isKnownContact(c, kc) !== null
+    return matchSearch && matchConf && matchReview && matchKnown
   })
 
   return (
@@ -2312,6 +2404,14 @@ function ContactsLibraryScreen({ allContacts, copiedId, setCopiedId }: {
         >
           <FiAlertTriangle size={12} /> Needs Review
         </button>
+        {kc.length > 0 && (
+          <button
+            onClick={() => setKnownFilter(!knownFilter)}
+            className={`flex items-center gap-2 px-3 py-2 border text-xs tracking-widest uppercase transition-colors ${knownFilter ? 'border-primary text-primary bg-primary/10' : 'border-border text-muted-foreground hover:border-primary'}`}
+          >
+            <FiFlag size={12} /> Known Prospects
+          </button>
+        )}
       </div>
 
       <div className="bg-card border border-border overflow-x-auto">
@@ -2341,10 +2441,12 @@ function ContactsLibraryScreen({ allContacts, copiedId, setCopiedId }: {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((contact, idx) => (
+            {filtered.map((contact, idx) => {
+              const knownMatch = isKnownContact(contact, kc)
+              return (
               <React.Fragment key={idx}>
                 <tr
-                  className={`border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors ${contact.needs_review ? 'bg-amber-400/5' : ''} ${expandedRow === idx ? 'bg-muted/20' : ''}`}
+                  className={`border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors ${knownMatch ? 'bg-primary/5' : contact.needs_review ? 'bg-amber-400/5' : ''} ${expandedRow === idx ? 'bg-muted/20' : ''}`}
                   onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
                 >
                   <td className="p-3" onClick={(e) => e.stopPropagation()}>
@@ -2364,6 +2466,7 @@ function ContactsLibraryScreen({ allContacts, copiedId, setCopiedId }: {
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
+                      {knownMatch && <FiFlag size={12} className="text-primary flex-shrink-0" title={`Known prospect: ${knownMatch.status}`} />}
                       {contact.needs_review && <FiAlertTriangle size={12} className="text-amber-400 flex-shrink-0" />}
                       <span className="font-serif tracking-wider">{contact.full_name ?? ''}</span>
                     </div>
@@ -2435,7 +2538,7 @@ function ContactsLibraryScreen({ allContacts, copiedId, setCopiedId }: {
                   </tr>
                 )}
               </React.Fragment>
-            ))}
+            )})}
           </tbody>
         </table>
         {filtered.length === 0 && (
@@ -2444,6 +2547,498 @@ function ContactsLibraryScreen({ allContacts, copiedId, setCopiedId }: {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Content Library Screen ──────────────────────────────────────────────────
+function ContentLibraryScreen({ libraryDocs, setLibraryDocs }: {
+  libraryDocs: LibraryDocument[]
+  setLibraryDocs: (docs: LibraryDocument[] | ((prev: LibraryDocument[]) => LibraryDocument[])) => void
+}) {
+  const [activeFolder, setActiveFolder] = useState<ContentFolder>('accenture')
+  const [isDragOver, setIsDragOver] = useState(false)
+  const uploadRef = useRef<HTMLInputElement>(null)
+
+  const folders: { id: ContentFolder; label: string; icon: React.ReactNode; description: string }[] = [
+    { id: 'accenture', label: 'Accenture', icon: <FiTarget size={16} />, description: 'Accenture reports, research papers, and insights' },
+    { id: 'lyzr', label: 'Lyzr', icon: <FiLayers size={16} />, description: 'Lyzr product docs, case studies, and materials' },
+    { id: 'other', label: 'Other', icon: <FiFolder size={16} />, description: 'Industry reports, competitor analysis, and other documents' },
+  ]
+
+  const folderDocs = libraryDocs.filter(d => d.folder === activeFolder)
+  const currentFolder = folders.find(f => f.id === activeFolder)
+
+  const handleUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const validFiles = fileArray.filter(f =>
+      f.type === 'application/pdf' ||
+      f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      f.type === 'text/plain' ||
+      f.name.endsWith('.pdf') || f.name.endsWith('.docx') || f.name.endsWith('.txt')
+    )
+    if (validFiles.length === 0) return
+
+    const newEntries: LibraryDocument[] = validFiles.map(f => ({
+      name: f.name,
+      folder: activeFolder,
+      uploadedAt: new Date().toISOString(),
+      status: 'uploading' as const,
+    }))
+    setLibraryDocs(prev => [...prev, ...newEntries])
+
+    for (const file of validFiles) {
+      try {
+        const result = await uploadAndTrainDocument(RAG_ID, file)
+        setLibraryDocs(prev => prev.map(entry =>
+          entry.name === file.name && entry.folder === activeFolder && entry.status === 'uploading'
+            ? { ...entry, status: result.success ? 'trained' : 'failed', error: result.error }
+            : entry
+        ))
+      } catch (err: any) {
+        setLibraryDocs(prev => prev.map(entry =>
+          entry.name === file.name && entry.folder === activeFolder && entry.status === 'uploading'
+            ? { ...entry, status: 'failed', error: err?.message || 'Upload failed' }
+            : entry
+        ))
+      }
+    }
+    if (uploadRef.current) uploadRef.current.value = ''
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    if (e.dataTransfer.files.length > 0) handleUpload(e.dataTransfer.files)
+  }
+
+  const handleRemoveDoc = (docName: string) => {
+    setLibraryDocs(prev => prev.filter(d => !(d.name === docName && d.folder === activeFolder)))
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif text-2xl tracking-wider">Content Library</h2>
+        <p className="text-xs text-muted-foreground tracking-wider uppercase mt-1">
+          Organize documents by source — {libraryDocs.length} document{libraryDocs.length !== 1 ? 's' : ''} across {folders.length} folders
+        </p>
+      </div>
+
+      {/* Folder Tabs */}
+      <div className="flex border-b border-border">
+        {folders.map(folder => {
+          const count = libraryDocs.filter(d => d.folder === folder.id).length
+          return (
+            <button
+              key={folder.id}
+              onClick={() => setActiveFolder(folder.id)}
+              className={`flex items-center gap-2 px-6 py-3 text-xs tracking-widest uppercase font-serif transition-all ${activeFolder === folder.id ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              {folder.icon}
+              {folder.label}
+              <span className={`text-xs px-1.5 py-0.5 border ${activeFolder === folder.id ? 'border-primary/30 text-primary' : 'border-border text-muted-foreground/60'}`}>{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Folder Content */}
+      <div className="bg-card border border-border p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-serif text-sm tracking-widest uppercase flex items-center gap-2">
+              {currentFolder?.icon} {currentFolder?.label} Documents
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">{currentFolder?.description}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={uploadRef}
+              type="file"
+              accept=".pdf,.docx,.txt"
+              multiple
+              onChange={(e) => e.target.files && handleUpload(e.target.files)}
+              className="hidden"
+            />
+            <button
+              onClick={() => uploadRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 border border-primary text-primary text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <FiUpload size={12} /> Upload
+            </button>
+          </div>
+        </div>
+
+        {/* Drop Zone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed transition-colors py-8 text-center ${isDragOver ? 'border-primary bg-primary/5' : 'border-border'}`}
+        >
+          <FiUpload className="mx-auto text-muted-foreground/30 mb-2" size={24} />
+          <p className="text-xs text-muted-foreground">Drag & drop PDF, DOCX, or TXT files here</p>
+          <p className="text-xs text-muted-foreground/50 mt-1">Files will be uploaded to the knowledge base and categorized under {currentFolder?.label}</p>
+        </div>
+
+        {/* Document List */}
+        <div className="space-y-1">
+          {folderDocs.length > 0 ? folderDocs.map((doc, idx) => (
+            <div key={idx} className="flex items-center justify-between py-2.5 px-3 bg-secondary/30 border border-border/50 hover:border-primary/20 transition-colors">
+              <div className="flex items-center gap-3">
+                <FiFileText size={14} className="text-muted-foreground flex-shrink-0" />
+                <span className="text-sm truncate max-w-[300px]">{doc.name}</span>
+                {doc.status === 'uploading' && (
+                  <span className="flex items-center gap-1 text-xs text-primary">
+                    <FiLoader className="animate-spin" size={10} /> Training
+                  </span>
+                )}
+                {doc.status === 'trained' && (
+                  <span className="flex items-center gap-1 text-xs text-green-400">
+                    <FiCheck size={10} /> Trained
+                  </span>
+                )}
+                {doc.status === 'failed' && (
+                  <span className="flex items-center gap-1 text-xs text-destructive" title={doc.error}>
+                    <FiAlertTriangle size={10} /> Failed
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground/40">
+                  {new Date(doc.uploadedAt).toLocaleDateString()}
+                </span>
+              </div>
+              <button
+                onClick={() => handleRemoveDoc(doc.name)}
+                className="text-muted-foreground hover:text-destructive transition-colors p-1"
+              >
+                <FiTrash2 size={13} />
+              </button>
+            </div>
+          )) : (
+            <div className="py-8 text-center">
+              <FiArchive className="mx-auto text-muted-foreground/20 mb-2" size={28} />
+              <p className="text-sm text-muted-foreground">No documents in this folder</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">Upload documents to organize them here</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        {folders.map(folder => {
+          const docs = libraryDocs.filter(d => d.folder === folder.id)
+          const trained = docs.filter(d => d.status === 'trained').length
+          return (
+            <button
+              key={folder.id}
+              onClick={() => setActiveFolder(folder.id)}
+              className={`bg-card border p-4 text-left transition-colors ${activeFolder === folder.id ? 'border-primary' : 'border-border hover:border-primary/30'}`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className={activeFolder === folder.id ? 'text-primary' : 'text-muted-foreground'}>{folder.icon}</span>
+                <span className="text-xs tracking-widest uppercase font-serif">{folder.label}</span>
+              </div>
+              <div className="text-2xl font-serif text-foreground">{docs.length}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {trained} trained | {docs.length - trained} pending
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Known Contacts Screen ──────────────────────────────────────────────────
+function KnownContactsScreen({ knownContacts, setKnownContacts, allContacts }: {
+  knownContacts: KnownContact[]
+  setKnownContacts: (contacts: KnownContact[] | ((prev: KnownContact[]) => KnownContact[])) => void
+  allContacts: EnrichedContact[]
+}) {
+  const [search, setSearch] = useState('')
+  const [uploadFeedback, setUploadFeedback] = useState('')
+  const [isDragOver, setIsDragOver] = useState(false)
+  const uploadRef = useRef<HTMLInputElement>(null)
+  const [manualForm, setManualForm] = useState({ full_name: '', email: '', company: '', job_title: '', status: 'Active' })
+  const [showAddForm, setShowAddForm] = useState(false)
+
+  const handleFileUpload = (files: FileList | File[]) => {
+    const file = Array.from(files)[0]
+    if (!file) return
+    if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx') && !file.name.endsWith('.txt')) {
+      setUploadFeedback('Please upload a CSV file (.csv)')
+      setTimeout(() => setUploadFeedback(''), 3000)
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      if (!text) return
+      const parsed = parseCSVToContacts(text)
+      if (parsed.length === 0) {
+        setUploadFeedback('No contacts found in file. Ensure it has headers like Name, Email, Company, Title.')
+        setTimeout(() => setUploadFeedback(''), 5000)
+        return
+      }
+      // Merge: avoid duplicates by email
+      setKnownContacts(prev => {
+        const existing = new Set(prev.map(c => c.email.toLowerCase()).filter(e => e))
+        const newContacts = parsed.filter(c => !c.email || !existing.has(c.email.toLowerCase()))
+        return [...prev, ...newContacts]
+      })
+      setUploadFeedback(`Imported ${parsed.length} contact${parsed.length !== 1 ? 's' : ''} from ${file.name}`)
+      setTimeout(() => setUploadFeedback(''), 4000)
+    }
+    reader.readAsText(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    if (e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files)
+  }
+
+  const handleAddManual = () => {
+    if (!manualForm.full_name && !manualForm.email) return
+    setKnownContacts(prev => [...prev, { ...manualForm }])
+    setManualForm({ full_name: '', email: '', company: '', job_title: '', status: 'Active' })
+    setShowAddForm(false)
+  }
+
+  const handleRemoveContact = (idx: number) => {
+    setKnownContacts(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const filtered = knownContacts.filter(c => {
+    if (!search) return true
+    const s = search.toLowerCase()
+    return (c.full_name?.toLowerCase().includes(s) || c.email?.toLowerCase().includes(s) || c.company?.toLowerCase().includes(s) || c.job_title?.toLowerCase().includes(s))
+  })
+
+  // Count how many known contacts appear in playbook results
+  const matchedCount = knownContacts.filter(kc => isKnownContact(kc, allContacts.map(ac => ({ full_name: ac.full_name, email: ac.email, company: ac.company, job_title: ac.job_title, status: '' }))) !== null ? allContacts.some(ac => (ac.email && kc.email && ac.email.toLowerCase() === kc.email.toLowerCase()) || (ac.full_name && kc.full_name && ac.full_name.toLowerCase() === kc.full_name.toLowerCase())) : false).length
+
+  const exportKnownCSV = () => {
+    const headers = ['Name', 'Email', 'Company', 'Title', 'Status']
+    const rows = knownContacts.map(c => [c.full_name, c.email, c.company, c.job_title, c.status])
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'known_contacts.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="font-serif text-2xl tracking-wider flex items-center gap-3">
+            <FiUserCheck size={22} className="text-primary" />
+            Known Contacts & Prospects
+          </h2>
+          <p className="text-xs text-muted-foreground tracking-wider uppercase mt-1">
+            {knownContacts.length} contact{knownContacts.length !== 1 ? 's' : ''} tracked | {matchedCount} found in reports
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-2 px-4 py-2 border border-border text-foreground text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-colors"
+          >
+            <FiPlus size={12} /> Add Contact
+          </button>
+          <button
+            onClick={exportKnownCSV}
+            disabled={knownContacts.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs tracking-widest uppercase hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            <FiDownload size={12} /> Export
+          </button>
+        </div>
+      </div>
+
+      {/* Upload Zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+        className={`bg-card border-2 border-dashed transition-colors p-6 text-center ${isDragOver ? 'border-primary bg-primary/5' : 'border-border'}`}
+      >
+        <input
+          ref={uploadRef}
+          type="file"
+          accept=".csv,.txt"
+          onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+          className="hidden"
+        />
+        <FiUpload className="mx-auto text-muted-foreground/30 mb-2" size={24} />
+        <p className="text-sm text-muted-foreground">Drop a CSV spreadsheet here or{' '}
+          <button onClick={() => uploadRef.current?.click()} className="text-primary hover:underline">browse files</button>
+        </p>
+        <p className="text-xs text-muted-foreground/50 mt-1">CSV should have columns: Name, Email, Company, Title, Status</p>
+      </div>
+
+      {uploadFeedback && (
+        <div className={`text-xs p-2.5 border ${uploadFeedback.includes('No contacts') || uploadFeedback.includes('Please') ? 'text-destructive border-destructive/20 bg-destructive/5' : 'text-green-400 border-green-400/20 bg-green-400/5'}`}>
+          {uploadFeedback}
+        </div>
+      )}
+
+      {/* Manual Add Form */}
+      {showAddForm && (
+        <div className="bg-card border border-primary/20 p-4 space-y-3">
+          <h3 className="text-xs tracking-widest uppercase text-primary">Add Contact Manually</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Full Name</label>
+              <input type="text" value={manualForm.full_name} onChange={(e) => setManualForm(prev => ({ ...prev, full_name: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2 focus:outline-none focus:border-primary" placeholder="John Smith" />
+            </div>
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Email</label>
+              <input type="email" value={manualForm.email} onChange={(e) => setManualForm(prev => ({ ...prev, email: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2 focus:outline-none focus:border-primary" placeholder="john@company.com" />
+            </div>
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Company</label>
+              <input type="text" value={manualForm.company} onChange={(e) => setManualForm(prev => ({ ...prev, company: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2 focus:outline-none focus:border-primary" placeholder="Accenture" />
+            </div>
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-muted-foreground mb-1">Job Title</label>
+              <input type="text" value={manualForm.job_title} onChange={(e) => setManualForm(prev => ({ ...prev, job_title: e.target.value }))} className="w-full bg-secondary/50 border border-border text-foreground text-sm p-2 focus:outline-none focus:border-primary" placeholder="CTO" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-end">
+            <button onClick={() => setShowAddForm(false)} className="px-3 py-1.5 border border-border text-muted-foreground text-xs tracking-widest uppercase hover:text-foreground transition-colors">Cancel</button>
+            <button onClick={handleAddManual} disabled={!manualForm.full_name && !manualForm.email} className="px-3 py-1.5 border border-primary text-primary text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40">Add</button>
+          </div>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative">
+        <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search known contacts..."
+          className="w-full pl-9 pr-3 py-2 bg-secondary/50 border border-border text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground/50"
+        />
+      </div>
+
+      {/* Contacts Table */}
+      <div className="bg-card border border-border overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Name</th>
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Email</th>
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Company</th>
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Title</th>
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">Status</th>
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal">In Reports</th>
+              <th className="text-left p-3 text-xs tracking-widest uppercase text-muted-foreground font-normal w-8"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((contact, idx) => {
+              const foundInReports = allContacts.some(ac =>
+                (ac.email && contact.email && ac.email.toLowerCase() === contact.email.toLowerCase()) ||
+                (ac.full_name && contact.full_name && ac.full_name.toLowerCase() === contact.full_name.toLowerCase())
+              )
+              return (
+                <tr key={idx} className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${foundInReports ? 'bg-primary/5' : ''}`}>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      {foundInReports && <FiFlag size={12} className="text-primary flex-shrink-0" title="Found in report results" />}
+                      <span className="font-serif tracking-wider">{contact.full_name || '--'}</span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-foreground/70 text-xs">{contact.email || '--'}</td>
+                  <td className="p-3 text-foreground/70">{contact.company || '--'}</td>
+                  <td className="p-3 text-foreground/70">{contact.job_title || '--'}</td>
+                  <td className="p-3">
+                    <span className="text-xs uppercase tracking-widest px-2 py-0.5 border border-primary/20 text-primary">{contact.status}</span>
+                  </td>
+                  <td className="p-3">
+                    {foundInReports ? (
+                      <span className="flex items-center gap-1 text-xs text-green-400"><FiCheck size={10} /> Yes</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">No</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <button onClick={() => handleRemoveContact(idx)} className="text-muted-foreground hover:text-destructive transition-colors p-0.5">
+                      <FiTrash2 size={12} />
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="p-8 text-center text-muted-foreground text-sm">
+            {knownContacts.length === 0 ? 'No known contacts. Upload a CSV spreadsheet or add contacts manually.' : 'No contacts match your search.'}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Contacts With Known Screen (Tabbed Wrapper) ─────────────────────────────
+function ContactsWithKnownScreen({ allContacts, knownContacts, setKnownContacts, copiedId, setCopiedId }: {
+  allContacts: EnrichedContact[]
+  knownContacts: KnownContact[]
+  setKnownContacts: (contacts: KnownContact[] | ((prev: KnownContact[]) => KnownContact[])) => void
+  copiedId: string
+  setCopiedId: (id: string) => void
+}) {
+  const [activeTab, setActiveTab] = useState<'all' | 'known'>('all')
+
+  return (
+    <div className="space-y-6">
+      {/* Tab Switcher */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`flex items-center gap-2 px-6 py-3 text-xs tracking-widest uppercase font-serif transition-all ${activeTab === 'all' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <FiUsers size={14} />
+          All Contacts
+          <span className={`text-xs px-1.5 py-0.5 border ${activeTab === 'all' ? 'border-primary/30 text-primary' : 'border-border text-muted-foreground/60'}`}>{allContacts.length}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('known')}
+          className={`flex items-center gap-2 px-6 py-3 text-xs tracking-widest uppercase font-serif transition-all ${activeTab === 'known' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <FiUserCheck size={14} />
+          Known Prospects
+          <span className={`text-xs px-1.5 py-0.5 border ${activeTab === 'known' ? 'border-primary/30 text-primary' : 'border-border text-muted-foreground/60'}`}>{knownContacts.length}</span>
+        </button>
+      </div>
+
+      {activeTab === 'all' && (
+        <ContactsLibraryScreen
+          allContacts={allContacts}
+          knownContacts={knownContacts}
+          copiedId={copiedId}
+          setCopiedId={setCopiedId}
+        />
+      )}
+
+      {activeTab === 'known' && (
+        <KnownContactsScreen
+          knownContacts={knownContacts}
+          setKnownContacts={setKnownContacts}
+          allContacts={allContacts}
+        />
+      )}
     </div>
   )
 }
@@ -2658,6 +3253,8 @@ export default function Page() {
   const [copiedId, setCopiedId] = useState('')
   const [showSample, setShowSample] = useState(false)
   const [activeAgentId, setActiveAgentId] = useState('')
+  const [libraryDocs, setLibraryDocs] = useState<LibraryDocument[]>([])
+  const [knownContacts, setKnownContacts] = useState<KnownContact[]>([])
   const stepIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load saved playbooks from localStorage
@@ -2667,6 +3264,22 @@ export default function Page() {
       if (stored) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed)) setSavedPlaybooks(parsed)
+      }
+    } catch { /* ignore */ }
+    // Load library docs
+    try {
+      const stored = localStorage.getItem('abm_library_docs')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) setLibraryDocs(parsed)
+      }
+    } catch { /* ignore */ }
+    // Load known contacts
+    try {
+      const stored = localStorage.getItem('abm_known_contacts')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) setKnownContacts(parsed)
       }
     } catch { /* ignore */ }
   }, [])
@@ -2679,6 +3292,20 @@ export default function Page() {
       } catch { /* ignore */ }
     }
   }, [savedPlaybooks])
+
+  // Save library docs to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('abm_library_docs', JSON.stringify(libraryDocs))
+    } catch { /* ignore */ }
+  }, [libraryDocs])
+
+  // Save known contacts to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('abm_known_contacts', JSON.stringify(knownContacts))
+    } catch { /* ignore */ }
+  }, [knownContacts])
 
   // Toggle sample data
   useEffect(() => {
@@ -2920,6 +3547,7 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
                   setCopiedId={setCopiedId}
                   onDeletePlaybook={handleDeleteCurrentPlaybook}
                   onUpdatePlaybook={handleUpdatePlaybook}
+                  knownContacts={knownContacts}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-24">
@@ -2936,9 +3564,18 @@ Return the complete JSON with report_playbooks (one per report), personas, icp_s
               )
             )}
 
+            {activeSection === 'library' && (
+              <ContentLibraryScreen
+                libraryDocs={libraryDocs}
+                setLibraryDocs={setLibraryDocs}
+              />
+            )}
+
             {activeSection === 'contacts' && (
-              <ContactsLibraryScreen
+              <ContactsWithKnownScreen
                 allContacts={allContacts}
+                knownContacts={knownContacts}
+                setKnownContacts={setKnownContacts}
                 copiedId={copiedId}
                 setCopiedId={setCopiedId}
               />
