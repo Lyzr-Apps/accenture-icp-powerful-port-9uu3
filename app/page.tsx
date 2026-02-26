@@ -2264,63 +2264,14 @@ export default function Page() {
     }, 10000)
 
     try {
-      const message = `Generate a comprehensive per-report ABM intelligence playbook covering ALL reports in the knowledge base.
+      const message = `Generate ABM intelligence playbook. Process ALL reports from the knowledge base. Return JSON only.
 
-Seed URLs:
-${urls}
+Seed URLs: ${urls}
+Filters: Industry=${industry}, Region=${region}, Persona=${persona}${keywords ? `, Keywords=${keywords}` : ''}
 
-Filters:
-- Industry: ${industry}
-- Region: ${region}
-- Persona Focus: ${persona}
-${keywords ? `- Keywords: ${keywords}` : ''}
+For each report: summarize, extract key claims with citations, assign topic tags and industry relevance scores, extract all authors/contributors (including co-authors, editors, research team, advisors), enrich contacts via Apollo for email and LinkedIn.
 
-CRITICAL — PROCESS ALL REPORTS. The knowledge base contains 28+ sources. You MUST create a report_playbooks entry for EVERY SINGLE ONE. Do NOT stop at 3-4 reports.
-
-MANDATORY REPORT LIST — create a report_playbooks entry for each:
-
-PDF REPORTS:
-1. Accenture Technology Vision 2025
-2. The Art of AI Maturity
-3. Making Reinvention Real with GenAI
-4. Reinvention in the Age of Generative AI
-5. Macro Foresight 2026: Top 10 Trends
-6. Accenture Technology Vision 2024
-7. Built to Scale
-8. Life Trends 2025
-9. Accenture Annual Report 2025
-10. WEF AI in Action 2025
-
-WEB SOURCES:
-11. Pulse of Change Index
-12. Technology Trends 2025
-13. Technology Trends 2024
-14. Sovereign AI
-15. Top 10 Trends in Banking 2024
-16. Banking Payments
-17. 5 Predictions for Insurance Industry 2026
-18. Technology Trends 2025 in Healthcare
-19. Cybersecurity: AI-Augmented Cyber Threats
-20. Gen AI and Talent Transformation
-21. Life Trends (web)
-22. Destination Net Zero
-23. Accenture Fact Sheet
-24. Autonomous Networks Acquisition
-25. Aircraft Interiors Expo
-26. Inclusion & Diversity Index
-27. Pulse of Change South Africa January 2025
-28. Accenture Investor Relations
-
-INSTRUCTIONS:
-1. Read EACH report in the knowledge base individually — all 28+ sources
-2. For EACH report, produce a summary with key claims, topic tags (AI Transformation, Agentic AI, Sovereign AI, Cloud, Technology, Financial Services, Banking, Insurance, Healthcare, Life Sciences, Cybersecurity, Workforce, Sustainability, Energy, GenAI, Payments, Data, Analytics, Supply Chain, Net Zero), and industry relevance
-3. For EACH report, extract ALL people who contributed — not just lead authors but also co-authors, contributing authors, editors, research team members, advisors, reviewers, foreword authors, project managers, design team, data analysts, industry leads, external contributors, and anyone acknowledged in the report. Search title pages, copyright pages, "Authors", "Contributors", "Acknowledgements", "About the Authors", "Research Team", "Advisory Board", "Editors", "Written by", footnotes, endnotes, back covers, and body text for named experts
-4. Enrich EVERY extracted contributor via Apollo to get their verified email address and LinkedIn URL
-5. Return results in the report_playbooks array — one entry per report, each with its own contributors array containing real people with email and linkedin_url fields
-6. Generate personas, ICP summary, and ABM email sequences across all reports
-7. Set total_reports to the actual number of reports processed (target: 28+)
-
-The report_playbooks array MUST have one entry per report. Do NOT truncate or limit the output.`
+Return the complete JSON with report_playbooks (one per report), personas, icp_summary, enriched_contacts, email_sequences, and quality_gates. Process as many reports as possible. A partial result with real data is required — never return text explanations.`
 
       const result = await callAIAgent(message, MANAGER_AGENT_ID)
 
@@ -2343,25 +2294,29 @@ The report_playbooks array MUST have one entry per report. Do NOT truncate or li
         setSavedPlaybooks(prev => [parsed, ...prev.slice(0, 9)])
         setActiveSection('playbooks')
       } else {
-        // Build diagnostic message
-        const diag: string[] = ['Failed to parse playbook response.']
-        if (result?.error) diag.push(`Error: ${result.error}`)
-        if (result?.response?.status === 'error') diag.push(`Agent status: error - ${result.response.message || 'no message'}`)
-        if (result?.response?.result && typeof result.response.result === 'object') {
-          const keys = Object.keys(result.response.result)
-          if (keys.length > 0) diag.push(`Response keys: ${keys.join(', ')}`)
-          else diag.push('Response result was empty object.')
-          // Show text field preview for debugging
-          if (result.response.result.text && typeof result.response.result.text === 'string') {
-            const t = result.response.result.text
-            diag.push(`Text field length: ${t.length} chars.`)
-            diag.push(`Text starts with: "${t.substring(0, 150)}..."`)
+        // Check if the agent returned a text explanation instead of JSON
+        const agentText = result?.response?.result?.text
+          || result?.response?.message
+          || (typeof result?.response?.result === 'string' ? result.response.result : null)
+
+        if (agentText && typeof agentText === 'string' && agentText.length > 50) {
+          // The agent returned prose instead of structured data — show it clearly
+          setErrorMsg(`The agent returned a text response instead of structured data. This usually means the request was too complex for a single run. Agent response: "${agentText.substring(0, 300)}${agentText.length > 300 ? '...' : ''}" — Try again or reduce the number of seed URLs.`)
+        } else {
+          // Build diagnostic message for unexpected response shapes
+          const diag: string[] = ['Failed to parse playbook response.']
+          if (result?.error) diag.push(`Error: ${result.error}`)
+          if (result?.response?.status === 'error') diag.push(`Agent status: error - ${result.response.message || 'no message'}`)
+          if (result?.response?.result && typeof result.response.result === 'object') {
+            const keys = Object.keys(result.response.result)
+            if (keys.length > 0) diag.push(`Response keys: ${keys.join(', ')}`)
+            else diag.push('Response result was empty object.')
           }
+          if (result?.response?.message && typeof result.response.message === 'string') {
+            diag.push(`Message: ${result.response.message.substring(0, 200)}`)
+          }
+          setErrorMsg(diag.join(' '))
         }
-        if (result?.response?.message && typeof result.response.message === 'string') {
-          diag.push(`Message preview: ${result.response.message.substring(0, 200)}`)
-        }
-        setErrorMsg(diag.join(' '))
       }
     } catch (err: any) {
       console.error('[handleGenerate] Exception:', err)
